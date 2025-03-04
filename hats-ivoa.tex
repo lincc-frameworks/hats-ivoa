@@ -2,33 +2,31 @@
 \input tthdefs
 \input gitmeta
 
-\title{???? Full title ????}
+\title{HATS: A Standard for the Hierarchical Adaptive Tiling Scheme in the Virtual Observatory}
 
-% see ivoatexDoc for what group names to use here; use \ivoagroup[IG] for
-% interest groups.
-\ivoagroup{???? group ????}
+\ivoagroup{Applications Group}
 
-\author[????URL????]{????Alfred Usher Thor????}
-\author{????Fred Offline????}
+%\author[https://www.ivoa.net/authors/caplar]{Neven Caplar}
+%\author[https://www.ivoa.net/authors/usher]{Melissa DeLucchi }
+%\author[https://www.ivoa.net/authors/offline]{Mario Juric}
+\author[https://www.ivoa.net/authors/offline]{LINCC team...}
 
-\editor{????Alfred Usher Thor????}
+\editor{editor here}
 
-% \previousversion[????URL????]{????Concise Document Label????}
 \previousversion{This is the first public release}
-
 
 \begin{document}
 \begin{abstract}
-???? Abstract ????
+    The increasing complexity and volume of astronomical datasets necessitate efficient spatial indexing and query strategies within the Virtual Observatory (VO). The Hierarchical Adaptive Tiling Scheme (HATS) is a framework designed to facilitate scalable queries, filtering operations, and efficient data retrieval across large astronomical surveys. Traditional spatial indexing methods often struggle with the massive scale of modern astronomical datasets, leading to inefficient query execution and storage overhead. HATS provides a flexible, hierarchical approach that balances computational efficiency and adaptability to non-uniform data distributions.
+
+    This document describes the structure, implementation, and best practices for integrating HATS within the VO ecosystem, ensuring interoperability and performance optimization for distributed astronomical datasets. The reference implementation of HATS can be found at \url{https://github.com/astronomy-commons/hats}. Additionally, we discuss how HATS enhances existing indexing schemes, its role in federated data access, and its potential applications for time-domain astronomy, large-scale surveys, and cross-matching of astronomical catalogs.
 \end{abstract}
 
-
 \section*{Acknowledgments}
+    The authors thank the IVOA Applications Working Group and various contributors from the astronomical community for their feedback and discussions that shaped this standard. We acknowledge the key collaborations with Space Telescope Science Institute (STScI) and IPAC, whose expertise and contributions have been invaluable in refining the HATS framework. Additionally, we extend our gratitude to CDS for their assistance in metadata structuring and interoperability support. This work has also benefited from insights provided by the S-Plus survey, Linea, ESA, and CDAC, whose contributions have helped enhance the applicability and robustness of HATS in large-scale astronomical data analysis.
 
-???? Or remove the section header ????
 
 \section*{Conformance-related definitions}
-
 The words ``MUST'', ``SHALL'', ``SHOULD'', ``MAY'', ``RECOMMENDED'', and
 ``OPTIONAL'' (in upper or lower case) used in this document are to be
 interpreted as described in IETF standard RFC2119 \citep{std:RFC2119}.
@@ -41,43 +39,57 @@ Virtual Observatory Alliance (IVOA)} is a global
 collaboration of separately funded projects to develop standards and
 infrastructure that enable VO applications.
 
-
 \section{Introduction}
+    The rapid expansion of astronomical data from large surveys like LSST, Euclid, and Roman Space Telescope necessitates innovative solutions for spatial indexing and efficient data retrieval. These surveys generate vast amounts of high-resolution imaging and time-domain data, requiring efficient methods for organizing, querying, and cross-matching data across multiple archives. Traditional approaches to spatial indexing, such as hierarchical pixelization (e.g., HEALPix) or static tiling schemes, often exhibit inefficiencies when handling dynamic, multi-resolution datasets.
 
-???? Write something ????
+    The Hierarchical Adaptive Tiling Scheme (HATS) is a novel approach designed to optimize spatial data partitioning while maintaining flexibility in accommodating varying data densities. Unlike fixed spatial partitioning methods, HATS dynamically adjusts tile sizes based on local data characteristics, ensuring an optimal balance between resolution, query efficiency, and storage management. By leveraging a hierarchical structure, HATS allows users to perform efficient multi-resolution queries while preserving high precision in regions of interest.
 
-\subsection{Role within the VO Architecture}
+    The HATS standard aims to define best practices for implementing and utilizing this tiling scheme within the Virtual Observatory framework. This document outlines the principles behind HATS, describes its data model, and provides recommendations for integrating it into existing VO services. Additionally, we discuss how HATS can facilitate efficient cross-matching of astronomical catalogs, accelerate large-scale spatial queries, and enhance interoperability between diverse astronomical datasets.
+    
+    This note [does what?]
 
-%\begin{figure}
-%\centering
+\section{Motivation and Goals}
+    The primary motivation behind HATS is to address the following challenges in astronomical data management:
+    \begin{itemize}
+        \item \textbf{Scalability:} Modern astronomical surveys generate petabytes of spatially distributed data, requiring an indexing scheme that scales efficiently with dataset size.
+        \item \textbf{Adaptive Resolution:} Fixed grid-based partitioning often leads to inefficient storage and query execution, particularly in non-uniformly distributed datasets. HATS dynamically adjusts tile sizes to accommodate varying data densities.
+        \item \textbf{Efficient Query Execution:} Spatial queries such as nearest-neighbor searches and cross-matching must be executed efficiently across distributed data repositories. HATS enables rapid indexing and retrieval of relevant data subsets.
+        \item \textbf{Interoperability:} Astronomical data is collected from diverse instruments and observatories, often using different spatial reference frames. HATS provides a standardized framework for integrating and harmonizing spatial data across multiple sources.
+    \end{itemize}
 
-% As of ivoatex 1.2, the architecture diagram is generated by ivoatex in
-% SVG; copy ivoatex/archdiag-full.xml to role_diagram.xml and throw out
-% all lines not relevant to your standard.
-% Notes don't generally need this.  If you don't copy role_diagram.xml,
-% you must remove role_diagram.pdf from SOURCES in the Makefile.
+\section{HATS Design and Implementation}
+    The HATS framework consists of the following core components:
+    \subsection{Hierarchical Structure}
+    HATS employs a multi-level hierarchy where each level represents a progressively finer spatial resolution. This structure enables efficient spatial indexing, allowing queries to traverse different levels of granularity based on computational needs.
+    TODO: Explain how the structure works. Explain datasets folder. Leafs at the end, separated in directories at healpix level. LEafs can be folders.
 
-%\includegraphics[width=0.9\textwidth]{role_diagram.pdf}
-%\caption{Architecture diagram for this document}
-%\label{fig:archdiag}
-%\end{figure}
+    \subsection{Adaptive Tiling Algorithm}
+    Unlike static partitioning schemes, HATS dynamically subdivides spatial regions based on data density. In regions with sparse data, larger tiles minimize storage overhead, whereas high-density regions are subdivided into smaller tiles to improve query efficiency.    TODO: How is this done, split in 4 when above a certain limit, split either by number of rows or size 
 
-%Fig.~\ref{fig:archdiag} shows the role this document plays within the
-I%VOA architecture \citep{2021ivoa.spec.1101D}.
+    \subsection{Metadata and Auxiliary Files}
+    HATS implementations utilize auxiliary metadata files to store relevant information about the tiling structure, including:
+    \begin{itemize}
+         \item \textbf{partition\_info.csv:} TODO: what is inside
+        \item \textbf{point\_map.json:} TODO: what is inside
+        \item \textbf{properties:} TODO: what is inside
+        \item \textbf{metadata.json:} (Inside dataset folder)TODO: what is inside
+        \item \textbf{common\_metadata.json:}  (Inside dataset folder) TODO: what is inside
+    \end{itemize}
+    
+     \subsection{Structure of files} 
+	TODO: Do we request parquet? Explain hats\_29 index. Explain not unique. 
 
-???? and so on, LaTeX as you know and love it. ????
+    \subsection{Integration with Existing VO Standards}
+    HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps). TODO: explain more how is it compatible (if it s). Add how will it work with TAP
+
+    \subsection{Performance Considerations}
+TODO: parquet enables columns. Rowgroups. Server-side filtering. Benchmarking plots
 
 \appendix
 \section{Changes from Previous Versions}
-
 No previous versions yet.
-% these would be subsections "Changes from v. WD-..."
-% Use itemize environments.
 
-
-% NOTE: IVOA recommendations must be cited from docrepo rather than ivoabib
-% (REC entries there are for legacy documents only)
 \bibliography{ivoatex/ivoabib,ivoatex/docrepo}
 
-
 \end{document}
+
