@@ -9,9 +9,12 @@
 
 \ivoagroup{Applications Group}
 
-%\author[https://www.ivoa.net/authors/caplar]{Neven Caplar}
-%\author[https://www.ivoa.net/authors/usher]{Melissa DeLucchi }
-%\author[https://www.ivoa.net/authors/offline]{Mario Juric}
+\author[https://www.ivoa.net/authors/caplar]{Neven Caplar}
+\author[https://www.ivoa.net/authors/usher]{Melissa DeLucchi}
+\author[https://www.ivoa.net/authors/caplar]{Sean McGuire}
+\author[https://www.ivoa.net/authors/usher]{Sandro Campos}
+\author[https://www.ivoa.net/authors/caplar]{Derek Jones}
+\author[https://www.ivoa.net/authors/usher]{Doug Branton}
 \author[https://www.ivoa.net/authors/offline]{LINCC team...}
 
 \editor{editor here}
@@ -47,7 +50,7 @@ infrastructure that enable VO applications.
 
     The Hierarchical Adaptive Tiling Scheme (HATS) is a novel approach designed to optimize spatial data partitioning while maintaining flexibility in accommodating varying data densities. Unlike fixed spatial partitioning methods, HATS dynamically adjusts tile sizes based on local data characteristics, ensuring an optimal balance between resolution, query efficiency, and storage management. By leveraging a hierarchical structure, HATS allows users to perform efficient multi-resolution queries while preserving high precision in regions of interest.
 
-    The HATS standard aims to define best practices for implementing and utilizing this tiling scheme within the Virtual Observatory framework. This document outlines the principles behind HATS, describes its data model, and provides recommendations for integrating it into existing VO services. Additionally, we discuss how HATS can facilitate efficient cross-matching of astronomical catalogs, accelerate large-scale spatial queries, and enhance interoperability between diverse astronomical datasets.
+    This document aims to define best practices for implementing and utilizing this tiling scheme within the Virtual Observatory framework. This document outlines the principles behind HATS, describes its data model, and provides recommendations. Additionally, we discuss how HATS can facilitate efficient cross-matching of astronomical catalogs, accelerate large-scale spatial queries, and enhance interoperability between diverse astronomical datasets.
 
 
 \section{Motivation and Goals}
@@ -60,11 +63,17 @@ infrastructure that enable VO applications.
     \end{itemize}
 
 \section{HATS Design and Implementation}
-    The HATS framework consists of the following core components and concepts:
+The HATS framework relies on spatially sharding catalogs 
+of approximately the same size in Parquet files. Here, we discuss how this is achieved and
+additional concepts that make it easier to use this main idea for astronomical
+research.
     
 \subsection{Catalog collections}
-    
-At the top level, we separate multiple possible `catalogs` into their respective folder. In this context `catalog` refers to the data storage object which will be described in sections below (starting with Section~\ref{sec:catalog}). The main data is stored in the `catalog` folder while all other `catalogs` are optional, and can be used to enhance access to the main data `catalog` or to enhance the main data `catalog` with additional information. We show the outline of this structure below, with few common examples of these optional `catalogs`:
+The central unit of data storage is HATS \texttt{catalog}. It stores the data along with the associated metadata needed to access it. \texttt{catalog} will be described in more detail in the following sections (starting with Section~\ref{sec:catalog}).\par
+At the top level, we organize different possible \texttt{catalog} associated with a single astronomical dataset. These include the primary data \texttt{catalog} and other \texttt{catalogs} that are optional and are intended either to improve access to the main \texttt{catalog} or to enrich it with additional information. For instance, common such \texttt{catalog} is the margin \texttt{catalog}, containing information about objects near the spatial border of each spatial shard. This dramatically simplifies and improves crossmatching ability when using HATS datasets. \par 
+
+\textcolor{red}{TODO, NEED HELP -  Explain the structure of the hats.properties. Explain what the format is, what is contained, what is the obligatory and what is optional information}
+Below, we present an overview of this folder structure, including a few common examples of such optional catalogs:
     
 \begin{verbatim}
 * gaia_dr3/
@@ -82,10 +91,8 @@ At the top level, we separate multiple possible `catalogs` into their respective
         * ...    
 \end{verbatim}    
     
-\textcolor{red}{TODO, NEED HELP -  Explain the structure of the hats.properties. Explain what the format is, what is contained, what is the obligatory and what is optional information}
-
 \subsection{Structure of a catalog} \label{sec:catalog}
-\textcolor{red}{TODO, NEED HELP - is the optional designation correct for each one of these metdata files} Focusing now on an individual `catalog`, the catalog organization structure is shown below
+\textcolor{red}{TODO, NEED HELP - is the optional designation correct for each one of these metdata files} Focusing now on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown below:
 \begin{verbatim}
 * catalog/
     * properties
@@ -105,11 +112,11 @@ At the top level, we separate multiple possible `catalogs` into their respective
         * Norder=.../
 \end{verbatim}
 
-The astronomy data is stored in the directory dataset, withing the subdirectories that specify the order at which particular part of the dataset is stored. We will discuss the the partitioning and data storage in Sections \ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and will be described in Section \ref{sec:meta}. 
+The astronomy data is stored in the directory dataset, within the subdirectories that specify the order at which particular part of the dataset is stored. We will discuss the the partitioning and data storage in Sections \ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and we will describe them in Section \ref{sec:meta}. 
     
 \subsection{Hierarchical Structure} \label{sec:hierarchical}
-    Focusing now on the contents of the dataset, HATS employs a multi-level hierarchy based on healpix tiling where each level represents a progressively finer spatial resolution.
-For instance, if we look into any single level we see the following structure 
+        Focusing now on the dataset's contents, HATS employs a multi-level hierarchy based on HEALPix tiling, where each level represents a progressively finer spatial resolution.
+For instance, if we look at any single level, we see the following structure:
 \begin{verbatim}
 * Norder=x/
     * Dir=0/
@@ -123,31 +130,33 @@ For instance, if we look into any single level we see the following structure
         * ...
 \end{verbatim} 
 
-In the directory structure above, `x`, `yyy`, `zzz`, `w` are understood to be placeholders for positive integer numbers. \textcolor{red}{TODO help needed, How are these numbers determined, that specify Npix and Directory; what is the meaning of the directory number?}. \par
-The data is stored in the parquet files (discussed in \ref{sec:parquet}), with one or multiple files being possible in the final directory, i.e., in the ultimate data leaf. If there are multiple files, they should be read together, i.e., we consider them to be one single data unit. In this way small updates can be added to already existing catalogs with simple, correctly placed, addition of files in existing folders.
+In the directory structure above,   \texttt{x}, \texttt{yyy}, \texttt{zzz}, \texttt{w} are understood to be placeholders for positive integer numbers. \textcolor{red}{TODO help needed, How are these numbers determined, that specify Npix and Directory; what is the meaning of the directory number?}. \par
+The data is stored in the parquet files (discussed in Section \ref{sec:parquet}), with one or multiple files being possible in the final directory, i.e., in the ultimate data leaf.  \par 
+If there are multiple files, they should be read together, i.e., we consider them to be one single data unit. In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed additions of files in existing folders.
 
     \subsection{Adaptive Tiling Algorithm} \label{sec:adaptive}
-    Unlike static partitioning schemes, HATS dynamically subdivides spatial regions based on data density. In regions with sparse data, larger tiles minimize storage overhead, whereas high-density regions are subdivided into smaller tiles to improve query efficiency. \par
-    The data is stored at a given level, until the dataset size crosses a predetermined threshold. This threshold can be, most commonly,  number of rows, or size of the data on the disk. At this point the data get split into 4 higher order healpix tiles, using the spatial information contained in the data. This process continues until all of the data is stored at the appropriate level, and no ``data leaf`` has more data than the predetermined threshold.
+    Unlike static partitioning schemes, HATS dynamically subdivides spatial regions based on data density. In areas with sparse data, larger tiles minimize storage overhead, whereas high-density areas are subdivided into smaller tiles to improve query efficiency. \par
+	The data is stored at a given level until the dataset size crosses a predetermined threshold. This threshold can be, most commonly, the number of rows or the size of the data on the disk. At this point, the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold.
 
      \subsection{Structure of files} \label{sec:parquet}
 The astronomical data is stored in *.parquet format. Parquet is a columnar storage file format optimized for efficient data compression and retrieval, especially well-suited for analytical workloads. It is ideal for storing large amounts of astronomical tabular data because it allows fast access to specific columns without reading the entire dataset, significantly reducing I/O and improving performance. \par
-The HATS format requires that the index colum of the dataset is \texttt{hats\_29} index column.  \texttt{hats\_29} stores the crucial spatial information about the position on the sky for each row, and it is not unique.\textcolor{red}{TODO, NEED HELP please describe how it is calculated; explain how it is not unique when multiple rows at the same healpix of order 29 position} 
+The HATS format requires that the index column of the dataset is \texttt{hats\_29} index column.  \texttt{hats\_29} stores the crucial spatial information about the position of the sky for each row, and it is not unique.\textcolor{red}{TODO, NEED HELP please describe how it is calculated; explain how it is not unique when multiple rows at the same HEALPix of order 29 position} 
 
     \subsection{Metadata and Auxiliary Files} \label{sec:meta}
     HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
     \begin{itemize}
-    	\item \textbf{hats.properties}, at catalog collection level
-         \item \textbf{[Optional] partition\_info.csv:}, at catalog level
-        \item \textbf{[Optional] point\_map.json:}, at catalog level
-        \item \textbf{[Optional] data\_thumbnail\.parquet}, at catalog level
-        \item \textbf{properties:}, at catalog level
-        \item \textbf{metadata\.json:}, at catalog/dataset level
-        \item \textbf{[Optional] common\_metadata.json:}, at catalog/dataset level
+    	\item \textbf{hats.properties}, at  \texttt{catalog} collection level
+         \item \textbf{[Optional] partition\_info.csv:}, at  \texttt{catalog} level
+        \item \textbf{[Optional] point\_map.json:}, at  \texttt{catalog} level
+        \item \textbf{[Optional] data\_thumbnail\.parquet}, at  \texttt{catalog} level
+        \item \textbf{properties:}, at  \texttt{catalog} level
+        \item \textbf{metadata\.json:}, at  \texttt{catalog}/dataset level
+        \item \textbf{[Optional] common\_metadata.json:}, at  \texttt{catalog}/dataset level
     \end{itemize}
     
     \subsubsection{hats.properties} 
     \textcolor{red}{TODO, NEED HELP - 1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information} 
+    
         \subsubsection{partition\_info.csv} 
    \textcolor{red}{TODO, NEED HELP-1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
 	Norder, Npix  information here. 
@@ -156,8 +165,8 @@ The HATS format requires that the index colum of the dataset is \texttt{hats\_29
    \textcolor{red}{TODO, NEED HELP -1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
    
            \subsubsection{data\_thumbnail.parquet} 
-  This is small dataset aimed to help users to understand and use the data. It is created from taking a first row from each each data leaf, so the the number of rows in this parquet file is the same as the number of  data leafs all together. \par
-  This files allows an user to get a quick overview of the whole dataset in a same format as the whole dataset. Given how it is sampled it will be cover the whole width of the dataset and give an user an accurate overview of the properties of the dataset. In such way it is superior and more convenient than pointing an user to taking out a subset of a single parquet data leaf for testing. 
+  This is a small dataset aimed to help users to understand and use the data. It is created by taking the first row from each data leaf, so the number of rows in this Parquet file is the same as the number of data leaves altogether. \par
+  This file allows a user to get a quick overview of the whole dataset in the same format as the whole dataset. Given how it is sampled, it will cover the entire width of the dataset and give a user an accurate overview of the properties of the dataset. In such a way, it is superior and more convenient than pointing a user to take out a subset of a single Parquet data leaf for testing. 
     
         \subsubsection{properties} 
    \textcolor{red}{TODO, NEED HELP-1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
@@ -174,11 +183,16 @@ The HATS format requires that the index colum of the dataset is \texttt{hats\_29
     \subsection{Integration with Existing VO Standards}
     HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps). \par
    \textcolor{red}{TODO, NEED HELP, especially with MOC: explain more how is it compatible}. \par 
-   \textcolor{red}{ TODO how it will work with TAP, VOParquet}
+   The HATS format can be made to be compatible with the TAP query by implementing a translation layer between the TAP query language. We have explored some initial implementation of such functionality, but the implementation details will always depend on the language used to handle the Parquet files. \par
+  We are closely following the development of the VOParquet format and aim to implement it as a part of HATS catalogs.
 
     \subsection{Performance Considerations}
-   \textcolor{red}{TODO parquet enables columns. Rowgroups. Server-side filtering. Larger than memory datasets Benchmarking plots}
-
+      Here, we will elaborate on several ways in which this format can be efficiently used. These insights come from our work with LSDB, a Python implementation of a package that works natively with HATS catalogs. \par
+        Firstly, we emphasize the need to use the Parquet column filtering. This is a standard practice in SQL-like workflows where a user requests only the columns they need, but it is less common in Python-like workflows. Loading into memory the columns that a user needs for scientific analysis, usually a couple out of tens or hundreds available, significantly reduced the computational requirements for the analysis.  \par 
+     Parquet files can also be split into so-called rowgroups. This is the splitting of Parquet into chunks with a fixed number of rows. Parquet readers can skip over entire row groups if they don't contain relevant data. This can significantly increase the efficiency of particular queries, especially if the rowgroups are selected in a particular way that is appropriate for the scientific case. For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. This is because we don't have to load the entire Parquet file into memory, only this tiny rowgroup part, in order to retrieve the needed row from the user. \par 
+    The fact that the data can be stored on the hard drive and served to the users simplifies the cost structure for catalog providers. Still, a user operating on the dataset, even if they are doing aggressive filtering and requesting a minimal number of rows at the end, will have to effectively transfer a large amount of data over to their client, where the filtering is done. These limitations could become prohibitive if this is done over a network or with limited bandwidth. To alleviate that problem, it is possible to implement a server-side query in which the filtering operations are done server-side, and only the final dataset is sent to a user. Of course, this requires computational resources on the provider's side. \par 
+   Finally, we want to highlight the exceptional performance possible when crossmatching HATS catalogs. Due to its spatial sharding, the crossmatching approach implemented in LSDB is competitive with the existing tools and is more efficient for extensive catalogs, starting with roughly one million rows. Because of the granular spatial structure, the user can increase the number of parallel workers. These will linearly decrease the time needed as long as the number of workers is smaller than the number of partitions in the datasets and there is sufficient I/O speed. In general, for typical cases of large catalogs (billion+ rows), crossmatching on a single core is around 5 to 15\% slower than the pure I/O speed. As discussed above, selecting only specific columns and parallelizing the work can drastically improve performance.   
+    \textcolor{red}{TODO, Add citations } 
 \appendix
 \section{Changes from Previous Versions}
 No previous versions yet.
