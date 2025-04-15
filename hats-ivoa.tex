@@ -69,70 +69,122 @@ additional concepts that make it easier to use this main idea for astronomical
 research.
     
 \subsection{Catalog collections}
-The central unit of data storage is HATS \texttt{catalog}. It stores the data along with the associated metadata needed to access it. \texttt{catalog} will be described in more detail in the following sections (starting with Section~\ref{sec:catalog}).\par
-At the top level, we organize different possible \texttt{catalog} associated with a single astronomical dataset. These include the primary data \texttt{catalog} and other \texttt{catalogs} that are optional and are intended either to improve access to the main \texttt{catalog} or to enrich it with additional information. For instance, common such \texttt{catalog} is the margin \texttt{catalog}, containing information about objects near the spatial border of each spatial shard. This dramatically simplifies and improves crossmatching ability when using HATS datasets. \par 
+The central unit of data storage is HATS \texttt{catalog}. 
+It stores the data along with the associated metadata needed to access it. 
+\texttt{catalog} will be described in more detail in the following sections (starting with Section~\ref{sec:catalog}).\par
+At the top level, we organize different possible \texttt{catalog} associated with a single astronomical dataset. 
+These include the primary data \texttt{catalog} and other \texttt{catalogs} that are optional and are intended either to improve access to the main \texttt{catalog} or to enrich it with additional information. 
+For instance, one common such \texttt{catalog} is the margin \texttt{catalog}, containing information about objects near the spatial border of each spatial shard. This dramatically simplifies and improves crossmatching ability when using HATS datasets. \par 
 
-\textcolor{red}{TODO, NEED HELP -  Explain the structure of the hats.properties. Explain what the format is, what is contained, what is the obligatory and what is optional information}
+\textcolor{red}{TODO, NEED HELP -  Explain the structure of the collection.properties. Explain what the format is, what is contained, what is the obligatory and what is optional information}
 Below, we present an overview of this folder structure, including a few common examples of such optional catalogs:
     
-\begin{verbatim}
-* gaia_dr3/
-    * hats.properties
-    * catalog/
-        * properties
-        * ...
-    *  [Optional] margin_5arcs/
-        * properties
-        * ...
-    * [Optional]  index_designation/
-        * properties
-        * ...
-    *  [Optional] spectra/
-        * ...    
-\end{verbatim}    
+    \begin{verbatim}
+    gaia_dr3/
+    |-- collection.properties
+    |-- catalog/
+    |   |-- properties
+    |   `-- ...
+    |-- [OPTIONAL] margin_5arcs/
+    |   |-- properties
+    |   `-- ...
+    |-- [OPTIONAL] margin_10arcs/
+    |   |-- properties
+    |   `-- ...
+    `-- [OPTIONAL] index_designation/
+        |-- properties
+        `-- ...
+    \end{verbatim}    
+
+
+    A text file named \texttt{collection.properties} must be provided. 
+    It marks the directory as containing a catalog collection, and so MUST be located in the 
+    root of the catalog collection.
+    It MUST be encoded in UTF-8, with one line per property, following the syntax \texttt{keyword = value}.
+    The ordering of the keywords is not important. The keywords MAY include many of those listed in the \textcolor{red}{TODO - table of keyword vocabulary}.
     
+    The additional keywords for the \texttt{collection.properties} file to provide linking between catalogs and supporting tables are:
+
+    \begin{itemize}
+        \item \texttt{name} human-readable name of the collection
+        \item \texttt{hats\_primary\_table\_url} subdirectory of the collection for the primary catalog
+        \item \texttt{all\_margins} space-delimited list of margin cache tables
+        \item \texttt{default\_margin} the default margin to be used for cross-matching
+        \item \texttt{all\_indexes} space-delimited list of index tables
+        \item \texttt{default\_index} the default index to be used for id searches (will typically be the survey identifier)
+    \end{itemize}
+    
+
 \subsection{Structure of a catalog} \label{sec:catalog}
-\textcolor{red}{TODO, NEED HELP - is the optional designation correct for each one of these metdata files} Focusing now on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown below:
+\textcolor{red}{TODO, NEED HELP - is the optional designation correct for each one of these metdata files. Melissa - added required/recommended/optional. fixed names} Focusing now on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown below:
 \begin{verbatim}
-* catalog/
-    * properties
-    * [Optional] partition_info.csv
-    * [Optional] point_map.json
-    * [Optional] data_thumbnail.parquet
-    * dataset/
-        * metadata.json
-        * [Optional] common_metadata.json
-        * Norder=0/
-        * Norder=1/
-        * Norder=2/
-        * Norder=3/
-        * Norder=4/
-        * Norder=5/
-        * Norder=6/
-        * Norder=.../
+catalog/
+|-- [REQUIRED] properties
+|-- [RECOMMENDED] partition_info.csv
+|-- [OPTIONAL] point_map.fits
+|-- [OPTIONAL] data_thumbnail.parquet
+`-- dataset/
+    |-- [RECOMMENDED] _metadata
+    |-- [RECOMMENDED] _common_metadata
+    |-- Norder=0/
+    |-- Norder=1/
+    |-- Norder=2/
+    |-- Norder=3/
+    |-- Norder=4/
+    |-- Norder=5/
+    |-- Norder=6/
+    `-- Norder=.../
 \end{verbatim}
 
 The astronomy data is stored in the directory dataset, within the subdirectories that specify the order at which particular part of the dataset is stored. We will discuss the the partitioning and data storage in Sections \ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and we will describe them in Section \ref{sec:meta}. 
     
 \subsection{Hierarchical Structure} \label{sec:hierarchical}
-        Focusing now on the dataset's contents, HATS employs a multi-level hierarchy based on HEALPix tiling, where each level represents a progressively finer spatial resolution.
-For instance, if we look at any single level, we see the following structure:
+Focusing now on the dataset's contents, HATS employs a multi-level hierarchy based on HEALPix tiling, where each level represents a progressively finer spatial resolution.
+
+All tiles of the same HEALPix order are contained within the same prefix \texttt{Norder=k} directory. 
+To avoid directories becoming too large for some file systems, the tiles are then grouped by a \texttt{Dir} subdirectory prefix,
+where the value of the \texttt{Dir} key is the result of integer divisiion by 10000 of the pixel number.
+
+We see the following structure, showing a dataset with leaf parquet files at several HEALPix orders:
 \begin{verbatim}
-* Norder=x/
-    * Dir=0/
-    * Npix=yyy/
-        * part0.parquet
-        * ...
-    * Npix=yyy/
-        * part0.parquet
-        * ...
-    * Dir=w/
-        * ...
+    dataset/
+    |-- ...
+    |-- Norder=6/
+    |   |-- Dir=0/
+    |   |   |-- Npix=0.parquet
+    |   |   |-- ...
+    |   |   `-- Npix=9999.parquet
+    |   `-- Dir=10000/
+    |       `-- Npix=10000.parquet
+    |           `-- ...
+    |-- Norder=7/
+    `-- ...
 \end{verbatim} 
 
-In the directory structure above,   \texttt{x}, \texttt{yyy}, \texttt{zzz}, \texttt{w} are understood to be placeholders for positive integer numbers. \textcolor{red}{TODO help needed, How are these numbers determined, that specify Npix and Directory; what is the meaning of the directory number?}. \par
+\textcolor{red}{Melissa - changed the example to use actual numbers, and multiple healpix orders. this mirrors page 8 of https://www.ivoa.net/documents/HiPS/20170519/REC-HIPS-1.0-20170519.pdf}. 
 The data is stored in the parquet files (discussed in Section \ref{sec:parquet}), with one or multiple files being possible in the final directory, i.e., in the ultimate data leaf.  \par 
-If there are multiple files, they should be read together, i.e., we consider them to be one single data unit. In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed additions of files in existing folders.
+If there are multiple files, they should be read together, i.e., we consider them to be one single data unit. 
+In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed additions of files in existing folders.
+
+Such a directory structure would instead appear like:
+\begin{verbatim}
+    dataset/
+    |-- ...
+    |-- Norder=6/
+    |   |-- Dir=0/
+    |   |   |-- Npix=0/
+    |   |   |   |-- part0.parquet
+    |   |   |   `-- ...
+    |   |   `-- Npix=9999/
+    |   |       |-- part0.parquet
+    |   |       `-- ...
+    |   `-- Dir=10000/
+    |       `-- Npix=10000/
+    |           |-- part0.parquet
+    |           `-- ...
+    |-- Norder=7/
+    `-- ...
+\end{verbatim} 
 
     \subsection{Adaptive Tiling Algorithm} \label{sec:adaptive}
     Unlike static partitioning schemes, HATS dynamically subdivides spatial regions based on data density. In areas with sparse data, larger tiles minimize storage overhead, whereas high-density areas are subdivided into smaller tiles to improve query efficiency. \par
@@ -140,18 +192,21 @@ If there are multiple files, they should be read together, i.e., we consider the
 
      \subsection{Structure of files} \label{sec:parquet}
 The astronomical data is stored in *.parquet format. Parquet is a columnar storage file format optimized for efficient data compression and retrieval, especially well-suited for analytical workloads. It is ideal for storing large amounts of astronomical tabular data because it allows fast access to specific columns without reading the entire dataset, significantly reducing I/O and improving performance. \par
-The HATS format requires that the index column of the dataset is \texttt{hats\_29} index column.  \texttt{hats\_29} stores the crucial spatial information about the position of the sky for each row, and it is not unique.\textcolor{red}{TODO, NEED HELP please describe how it is calculated; explain how it is not unique when multiple rows at the same HEALPix of order 29 position} 
+The HATS format RECOMMENDS that the index column of the dataset is \texttt{healpix\_29} index column.  \texttt{healpix\_29} stores the crucial spatial information about the position in the sky for each row, and it is not unique.
+\textcolor{red}{This is calculated as the HEALPix order 29 value of the row's right ascension and decliation. If two objects occur at the same location, or the data is individual observations of the same sky object, then multiple rows may have the same value for the \texttt{healpix\_29} column.
+The existence of this value speeds up downstream spatial calculations, and is beneficial for spatially-intensive applications.}
+\textcolor{red}{TODO, NEED HELP please describe how it is calculated; explain how it is not unique when multiple rows at the same HEALPix of order 29 position} 
 
     \subsection{Metadata and Auxiliary Files} \label{sec:meta}
     HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
     \begin{itemize}
-    	\item \textbf{hats.properties}, at  \texttt{catalog} collection level
-         \item \textbf{[Optional] partition\_info.csv:}, at  \texttt{catalog} level
-        \item \textbf{[Optional] point\_map.json:}, at  \texttt{catalog} level
-        \item \textbf{[Optional] data\_thumbnail\.parquet}, at  \texttt{catalog} level
-        \item \textbf{properties:}, at  \texttt{catalog} level
-        \item \textbf{metadata\.json:}, at  \texttt{catalog}/dataset level
-        \item \textbf{[Optional] common\_metadata.json:}, at  \texttt{catalog}/dataset level
+    	\item \textbf{[REQUIRED]collection.properties}, at  \texttt{catalog} collection level
+         \item \textbf{[RECOMMENDED] partition\_info.csv}, at  \texttt{catalog} level
+        \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
+        \item \textbf{[OPTIONAL] data\_thumbnail\.parquet}, at  \texttt{catalog} level
+        \item \textbf{[REQUIRED]properties}, at  \texttt{catalog} level
+        \item \textbf{[RECOMMENDED]\_metadata}, at  \texttt{catalog}/dataset level
+        \item \textbf{[RECOMMENDED] \_common\_metadata}, at  \texttt{catalog}/dataset level
     \end{itemize}
     
     \subsubsection{hats.properties} 
