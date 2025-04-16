@@ -4,6 +4,31 @@
 \usepackage{longtable}
 \usepackage{array}
 
+\usepackage{listings}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\lstset{ %
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+  basicstyle=\footnotesize\ttfamily,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  frame=single,                    % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language={},                 % the language of the code
+  otherkeywords={*,...},            % if you want to add more keywords to the set
+  numbers=none,                    % where to put the line-numbers; possible values are (none, left, right)
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g.comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,                       % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
 \input tthdefs
 \input gitmeta
 
@@ -85,58 +110,57 @@ These include the primary data \texttt{catalog} and other \texttt{catalogs} that
 For instance, one common such \texttt{catalog} is the margin \texttt{catalog}, containing information about objects near the spatial border of each spatial shard. This dramatically simplifies and improves crossmatching ability when using HATS datasets. \par 
 
 \textcolor{red}{TODO, NEED HELP -  Explain the structure of the collection.properties. Explain what the format is, what is contained, what is the obligatory and what is optional information}
-In Figure~\ref{fig:exampleCollectionStructure}, we present an overview of this folder structure, including a few common examples of such optional catalogs.
+In Listing~\ref{fig:exampleCollectionStructure}, we present an overview of this folder structure, including a few common examples of such optional catalogs.
 
-\begin{figure}[htb]
-    \centering
-\begin{verbatim}
-    gaia_dr3/
-    |-- collection.properties
-    |-- catalog/
-    |   |-- properties
-    |   `-- ...
-    |-- [OPTIONAL] margin_5arcs/
-    |   |-- properties
-    |   `-- ...
-    |-- [OPTIONAL] margin_10arcs/
-    |   |-- properties
-    |   `-- ...
-    `-- [OPTIONAL] index_designation/
-        |-- properties
-        `-- ...
-    \end{verbatim}
-    \caption{Example collection diretory contents}
-    \label{fig:exampleCollectionStructure}
-    \end{figure} 
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example collection directory contents, label=fig:exampleCollectionStructure]
+gaia_dr3/
+|-- collection.properties
+|-- catalog/
+|   |-- properties
+|   +-- . . .
+|-- [OPTIONAL] margin_5arcs/
+|   |-- properties
+|   +-- . . .
+|-- [OPTIONAL] margin_10arcs/
+|   |-- properties
+|   +-- . . .
++-- [OPTIONAL] index_designation/
+    |-- properties
+    +-- . . .
+\end{lstlisting}
+\end{minipage}
 
+A text file named \texttt{collection.properties} must be provided. 
+It marks the directory as containing a catalog collection, and so MUST be located in the 
+root of the catalog collection.
+It MUST be encoded in UTF-8, with one line per property, following the syntax \texttt{keyword = value}.
+The ordering of the keywords is not important. The keywords MAY include many of those listed in Table~\ref{tab:properties}.
 
-    A text file named \texttt{collection.properties} must be provided. 
-    It marks the directory as containing a catalog collection, and so MUST be located in the 
-    root of the catalog collection.
-    It MUST be encoded in UTF-8, with one line per property, following the syntax \texttt{keyword = value}.
-    The ordering of the keywords is not important. The keywords MAY include many of those listed in Table~\ref{tab:properties}.
-    
-    The additional keywords for the \texttt{collection.properties} file to provide linking between catalogs and supporting tables are:
+The additional keywords for the \texttt{collection.properties} file to provide linking between catalogs and supporting tables are:
 
-    \begin{itemize}
-        \item \texttt{name} human-readable name of the collection
-        \item \texttt{hats\_primary\_table\_url} subdirectory of the collection for the primary catalog
-        \item \texttt{all\_margins} space-delimited list of margin cache tables
-        \item \texttt{default\_margin} the default margin to be used for cross-matching
-        \item \texttt{all\_indexes} space-delimited list of index tables
-        \item \texttt{default\_index} the default index to be used for id searches (will typically be the survey identifier)
-    \end{itemize}
+\begin{itemize}
+    \item \texttt{name} human-readable name of the collection
+    \item \texttt{hats\_primary\_table\_url} subdirectory of the collection for the primary catalog
+    \item \texttt{all\_margins} space-delimited list of margin cache tables
+    \item \texttt{default\_margin} the default margin to be used for cross-matching
+    \item \texttt{all\_indexes} space-delimited list of index tables
+    \item \texttt{default\_index} the default index to be used for id searches (will typically be the survey identifier)
+\end{itemize}
     
 
 \subsection{Structure of a catalog} \label{sec:catalog}
-\textcolor{red}{TODO, NEED HELP - is the optional designation correct for each one of these metdata files. Melissa - added required/recommended/optional. fixed names} Focusing now on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown below:
-\begin{verbatim}
+\textcolor{red}{TODO, NEED HELP - is the optional designation correct for each one of these metdata files. Melissa - added required/recommended/optional. fixed names} 
+Focusing now on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown in Figure~\ref{fig:exampleCatalogStructure}:
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example catalog directory contents, label=fig:exampleCatalogStructure]
 catalog/
 |-- [REQUIRED] properties
 |-- [RECOMMENDED] partition_info.csv
 |-- [OPTIONAL] point_map.fits
 |-- [OPTIONAL] data_thumbnail.parquet
-`-- dataset/
++-- dataset/
     |-- [RECOMMENDED] _metadata
     |-- [RECOMMENDED] _common_metadata
     |-- Norder=0/
@@ -146,10 +170,11 @@ catalog/
     |-- Norder=4/
     |-- Norder=5/
     |-- Norder=6/
-    `-- Norder=.../
-\end{verbatim}
+    +-- Norder=. . ./
+\end{lstlisting}
+\end{minipage}
 
-The astronomy data is stored in the directory dataset, within the subdirectories that specify the order at which particular part of the dataset is stored. We will discuss the the partitioning and data storage in Sections \ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and we will describe them in Section \ref{sec:meta}. 
+The astronomy data is stored in the directory \texttt{dataset}, within the subdirectories that specify the order at which particular part of the dataset is stored. We will discuss the the partitioning and data storage in Sections \ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and we will describe them in Section \ref{sec:meta}. 
     
 \subsection{Hierarchical Structure} \label{sec:hierarchical}
 Focusing now on the dataset's contents, HATS employs a multi-level hierarchy based on HEALPix tiling, where each level represents a progressively finer spatial resolution.
@@ -158,46 +183,52 @@ All tiles of the same HEALPix order are contained within the same prefix \texttt
 To avoid directories becoming too large for some file systems, the tiles are then grouped by a \texttt{Dir} subdirectory prefix,
 where the value of the \texttt{Dir} key is the result of integer divisiion by 10000 of the pixel number.
 
-We see the following structure, showing a dataset with leaf parquet files at several HEALPix orders:
-\begin{verbatim}
-    dataset/
-    |-- ...
-    |-- Norder=6/
-    |   |-- Dir=0/
-    |   |   |-- Npix=0.parquet
-    |   |   |-- ...
-    |   |   `-- Npix=9999.parquet
-    |   `-- Dir=10000/
-    |       `-- Npix=10000.parquet
-    |           `-- ...
-    |-- Norder=7/
-    `-- ...
-\end{verbatim} 
+We see the directory structure in Listing~\ref{fig:datasetWithLeaf}, showing a dataset with leaf parquet files at several HEALPix orders.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example catalog dataset directory contents, label=fig:datasetWithLeaf]
+dataset/
+|-- . . .
+|-- Norder=6/
+|   |-- Dir=0/
+|   |   |-- Npix=0.parquet
+|   |   |-- . . .
+|   |   +-- Npix=9999.parquet
+|   +-- Dir=10000/
+|       +-- Npix=10000.parquet
+|           +-- . . .
+|-- Norder=7/
++-- . . .
+\end{lstlisting} 
+\end{minipage}
 
 \textcolor{red}{Melissa - changed the example to use actual numbers, and multiple healpix orders. this mirrors page 8 of https://www.ivoa.net/documents/HiPS/20170519/REC-HIPS-1.0-20170519.pdf}. 
 The data is stored in the parquet files (discussed in Section \ref{sec:parquet}), with one or multiple files being possible in the final directory, i.e., in the ultimate data leaf.  \par 
 If there are multiple files, they should be read together, i.e., we consider them to be one single data unit. 
 In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed additions of files in existing folders.
 
-Such a directory structure would instead appear like:
-\begin{verbatim}
-    dataset/
-    |-- ...
-    |-- Norder=6/
-    |   |-- Dir=0/
-    |   |   |-- Npix=0/
-    |   |   |   |-- part0.parquet
-    |   |   |   `-- ...
-    |   |   `-- Npix=9999/
-    |   |       |-- part0.parquet
-    |   |       `-- ...
-    |   `-- Dir=10000/
-    |       `-- Npix=10000/
-    |           |-- part0.parquet
-    |           `-- ...
-    |-- Norder=7/
-    `-- ...
-\end{verbatim} 
+Such a directory structure would instead appear as shown in Listing~\ref{fig:datasetWithDir}
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example catalog dataset directory contents with leaf directories, label=fig:datasetWithDir]
+dataset/
+|-- . . .
+|-- Norder=6/
+|   |-- Dir=0/
+|   |   |-- Npix=0/
+|   |   |   |-- part0.parquet
+|   |   |   +-- . . .
+|   |   +-- Npix=9999/
+|   |       |-- part0.parquet
+|   |       +-- . . .
+|   +-- Dir=10000/
+|       +-- Npix=10000/
+|           |-- part0.parquet
+|           +-- . . .
+|-- Norder=7/
++-- . . .
+\end{lstlisting} 
+\end{minipage} 
 
     \subsection{Adaptive Tiling Algorithm} \label{sec:adaptive}
     Unlike static partitioning schemes, HATS dynamically subdivides spatial regions based on data density. In areas with sparse data, larger tiles minimize storage overhead, whereas high-density areas are subdivided into smaller tiles to improve query efficiency. \par
@@ -261,7 +292,7 @@ hats\_col\_assn\_primary\_assn &For association tables (i.e. dataproduct\_type =
 hats\_col\_dec &Column name of the dec coordinate. Used for partitioning and default cross-matching. \\
 hats\_col\_ra &Column name of the ra coordinate. Used for partitioning and default cross-matching. \\
 hats\_cols\_default &Which columns should be read from parquet files, when user doesn't otherwise specify. Useful for wide tables. Format blank separated column names \\
-hats\_cols\_sort &At catalog creation time, the columns used to sort the data, in addition to `healpix\_29` column. \\
+hats\_cols\_sort &At catalog creation time, the columns used to sort the data, in addition to \texttt{healpix\_29} column. \\
 hats\_cols\_survey\_id &The primary key used in the original survey data. May be multiple columns if the survey uses a composite key (e.g. object ID and MJD for detections) \\
 hats\_coordinate\_epoch &For the default ra and dec (hats\_col\_ra, hats\_col\_dec), the measurement epoch \\
 hats\_copyright &Copyright mention associated to the HATS - Format: free text \\
@@ -340,9 +371,8 @@ The text file may contain comment lines, beginning with the \texttt{'\#'} charac
 
 An example \texttt{properties} file is shown in Figure~\ref{fig:examplePropertiesFile}.
 
-\begin{figure}[htb]
-    \begin{center}
-\begin{verbatim}
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example \texttt{properties} file contents, label=fig:examplePropertiesFile]
 #HATS catalog
 obs_collection=euclid_q1_merFinalCatalog
 dataproduct_type=object
@@ -358,11 +388,8 @@ hats_creation_date=2025-03-20T03\:38UTC
 hats_estsize=23137775
 hats_release_date=2024-09-18
 hats_version=v0.1
-\end{verbatim}
-\end{center}
-\caption{Example \texttt{properties} file contents}
-\label{fig:examplePropertiesFile}
-\end{figure}
+\end{lstlisting}
+\end{minipage}
 
 \textcolor{red}{some more melissa text ends}
 
@@ -379,22 +406,16 @@ The values of pairs of \texttt{"Norder"} and \texttt{"Npix"} reflect the HEALPix
 HATS readers can quickly read this file to understand the full scope of the catalog, and potential spatial overlap with other catalogs.
 \textcolor{red}{some more melissa text ends}
 
-
-\begin{figure}[htb]
-\begin{center}
-\begin{verbatim}    
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example \texttt{partition\_info.csv} file contents, label=fig:examplePartitionInfoCsv]    
 Norder,	Npix
 3,	530
 4,	637
 4,	958
 4,	1003
 4,	2147
-\end{verbatim}
-\end{center}
-\caption{Example \texttt{partition\_info.csv} file contents}
-\label{fig:examplePartitionInfoCsv}
-\end{figure}
- 
+\end{lstlisting}
+\end{minipage}
 
 \subsubsection{point\_map.fits} 
    \textcolor{red}{TODO, NEED HELP -1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
