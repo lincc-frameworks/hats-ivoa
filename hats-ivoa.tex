@@ -85,9 +85,11 @@ These include the primary data \texttt{catalog} and other \texttt{catalogs} that
 For instance, one common such \texttt{catalog} is the margin \texttt{catalog}, containing information about objects near the spatial border of each spatial shard. This dramatically simplifies and improves crossmatching ability when using HATS datasets. \par 
 
 \textcolor{red}{TODO, NEED HELP -  Explain the structure of the collection.properties. Explain what the format is, what is contained, what is the obligatory and what is optional information}
-Below, we present an overview of this folder structure, including a few common examples of such optional catalogs:
-    
-    \begin{verbatim}
+In Figure~\ref{fig:exampleCollectionStructure}, we present an overview of this folder structure, including a few common examples of such optional catalogs.
+
+\begin{figure}[htb]
+    \centering
+\begin{verbatim}
     gaia_dr3/
     |-- collection.properties
     |-- catalog/
@@ -102,7 +104,10 @@ Below, we present an overview of this folder structure, including a few common e
     `-- [OPTIONAL] index_designation/
         |-- properties
         `-- ...
-    \end{verbatim}    
+    \end{verbatim}
+    \caption{Example collection diretory contents}
+    \label{fig:exampleCollectionStructure}
+    \end{figure} 
 
 
     A text file named \texttt{collection.properties} must be provided. 
@@ -208,12 +213,12 @@ The existence of this value speeds up downstream spatial calculations, and is be
     \subsection{Metadata and Auxiliary Files} \label{sec:meta}
     HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
     \begin{itemize}
-    	\item \textbf{[REQUIRED]collection.properties}, at  \texttt{catalog} collection level
+    	\item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
          \item \textbf{[RECOMMENDED] partition\_info.csv}, at  \texttt{catalog} level
         \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
-        \item \textbf{[OPTIONAL] data\_thumbnail\.parquet}, at  \texttt{catalog} level
-        \item \textbf{[REQUIRED]properties}, at  \texttt{catalog} level
-        \item \textbf{[RECOMMENDED]\_metadata}, at  \texttt{catalog}/dataset level
+        \item \textbf{[OPTIONAL] data\_thumbnail.parquet}, at  \texttt{catalog} level
+        \item \textbf{[REQUIRED] properties}, at  \texttt{catalog} level
+        \item \textbf{[RECOMMENDED] \_metadata}, at  \texttt{catalog}/dataset level
         \item \textbf{[RECOMMENDED] \_common\_metadata}, at  \texttt{catalog}/dataset level
     \end{itemize}
     
@@ -296,22 +301,109 @@ t\_min &Start time of the observations – Format: real – Representation: MJD1
 
 \begin{table}[!htb]
     \begin{center}
-      \caption{Catalog-type specific fields}
-      \label{tab:propertyRequirements}
-      \begin{tabular}{p{0.35\textwidth}p{0.64\textwidth}}
+      \begin{tabular}{l c c c c c}
         \sptablerule
-        \textbf{Property} & \textbf{Explanation} \\\sptablerule
-      \end{tabular}
-    \end{center}
+        &\multicolumn{5}{c}{HATS Catalog Type} \\
+        \textbf{HATS Keyword} & \textbf{object} & \textbf{margin} & \textbf{index} & \textbf{association}  & \textbf{collection} \\
+        \sptablerule
+        all\_indexes & & & & &opt \\
+all\_margins & & & & &opt \\
+dataproduct\_type &REQ &REQ &REQ &REQ & \\
+default\_index & & & & &opt \\
+default\_margin & & & & &opt \\
+hats\_assn\_join\_table\_url & & & &REQ & \\
+hats\_assn\_leaf\_files & & & &REQ & \\
+hats\_col\_assn\_join & & & &REQ & \\
+hats\_col\_assn\_join\_assn & & & &opt & \\
+hats\_col\_assn\_primary & & & &REQ & \\
+hats\_col\_assn\_primary\_assn & & & &opt & \\
+hats\_col\_dec &REQ &opt & & & \\
+hats\_col\_ra &REQ &opt & & & \\
+hats\_cols\_default &opt &opt & & & \\
+hats\_index\_column & & &REQ & & \\
+hats\_index\_extra\_column & & &opt & & \\
+hats\_margin\_threshold & &REQ & & & \\
+hats\_npix\_suffix &opt &opt &opt &opt & \\
+hats\_nrows &REQ &REQ &REQ &REQ & \\
+hats\_primary\_table\_url & &REQ &REQ &REQ &REQ \\
+obs\_collection &REQ &REQ &REQ &REQ &REQ \\
+        \sptablerule
+    \end{tabular}
+    \caption{Catalog-type specific fields. For display, REQ is REQUIRED, and opt is OPTIONAL}
+    \label{tab:propertyRequirements}
+  \end{center}
 \end{table}
 
-        \subsubsection{partition\_info.csv} 
+\textcolor{red}{some more melissa text starts}
+
+The text file may contain comment lines, beginning with the \texttt{'\#'} character.
+
+An example \texttt{properties} file is shown in Figure~\ref{fig:examplePropertiesFile}.
+
+\begin{figure}[htb]
+    \begin{center}
+\begin{verbatim}
+#HATS catalog
+obs_collection=euclid_q1_merFinalCatalog
+dataproduct_type=object
+hats_nrows=29767806
+hats_col_ra=RIGHT_ASCENSION
+hats_col_dec=DECLINATION
+hats_cols_sort=OBJECT_ID
+hats_max_rows=1000000
+hats_order=6
+moc_sky_fraction=0.00618
+hats_builder=hats-import v0.4.4
+hats_creation_date=2025-03-20T03\:38UTC
+hats_estsize=23137775
+hats_release_date=2024-09-18
+hats_version=v0.1
+\end{verbatim}
+\end{center}
+\caption{Example \texttt{properties} file contents}
+\label{fig:examplePropertiesFile}
+\end{figure}
+
+\textcolor{red}{some more melissa text ends}
+
+
+\subsubsection{partition\_info.csv} 
    \textcolor{red}{TODO, NEED HELP-1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
 	Norder, Npix  information here. 
-    
-        \subsubsection{point\_map.json} 
+
+    \textcolor{red}{some more melissa text starts}
+A text file named \texttt{partition\_info.csv} is OPTIONAL and RECOMMENDED in the root level of the catalog directory.
+If present, it MUST be a CSV (comma-separated-values) file, with the columns \texttt{"Norder"} and \texttt{"Npix"}, as shown in example contents in Figure~\ref{fig:examplePartitionInfoCsv}
+Additional columns might be present in the file, but are not required, and may not be interpreted by all HATS readers.
+The values of pairs of \texttt{"Norder"} and \texttt{"Npix"} reflect the HEALPix tiles of the catalog's partitions. 
+HATS readers can quickly read this file to understand the full scope of the catalog, and potential spatial overlap with other catalogs.
+\textcolor{red}{some more melissa text ends}
+
+
+\begin{figure}[htb]
+\begin{center}
+\begin{verbatim}    
+Norder,	Npix
+3,	530
+4,	637
+4,	958
+4,	1003
+4,	2147
+\end{verbatim}
+\end{center}
+\caption{Example \texttt{partition\_info.csv} file contents}
+\label{fig:examplePartitionInfoCsv}
+\end{figure}
+ 
+
+\subsubsection{point\_map.fits} 
    \textcolor{red}{TODO, NEED HELP -1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
    
+A FITS file containing the two-dimensional histogram of points in each HEALPix tile at some reasonably high order.
+This will be at the highest order calculated during the catalog ingestion process (likely 9 or 10). 
+This data is useful when inspecting catalogs and understanding the distribution of data. 
+
+This file is OPTIONAL and RECOMMENDED for object catalogs.
            \subsubsection{data\_thumbnail.parquet} 
   This is a small dataset aimed to help users to understand and use the data. It is created by taking the first row from each data leaf, so the number of rows in this Parquet file is the same as the number of data leaves altogether. \par
   This file allows a user to get a quick overview of the whole dataset in the same format as the whole dataset. Given how it is sampled, it will cover the entire width of the dataset and give a user an accurate overview of the properties of the dataset. In such a way, it is superior and more convenient than pointing a user to take out a subset of a single Parquet data leaf for testing. 
@@ -322,12 +414,39 @@ t\_min &Start time of the observations – Format: real – Representation: MJD1
     See also values for all properties in Table~\ref{tab:properties}
 
     
-        \subsubsection{metadata.json} 
+        \subsubsection{\_metadata and \_common\_metadata} 
    \textcolor{red}{TODO, NEED HELP -1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
-    It contains per partition information
-        \subsubsection{common\_metadata.json} 
-   \textcolor{red}{TODO, NEED HELP -1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}n
-    Information that is true for everything 
+
+   Many parquet reading frameworks support and recommend additional dataset-level metadata files:
+   \begin{itemize}
+    \item \texttt{\_common\_metadata} which contains the full schema of the dataset, and can be thought of as extensive header information. This fill will know all of the columns and their types, as well as any top-level key-value metadata associated with the full parquet dataset.
+    \item \texttt{\_metadata} contains per-partition information, chiefly the footer information of all constituent parquet files which contain aggregate statistics.
+\end{itemize}
+
+To understand the value of these files, it is helpful to understand the structure of partitioned parquet files. 
+Figure~\ref{fig:partitionedParquet} shows a schematic of two partitioned parquet files. There is some top-level metadata that may describe the full dataset, as well as column-level key-value metadata.
+The data values are shown in gray, and typically will take up most of the space of the parquet file. Parquet files may also have footers which contain aggregate statistics about each column (the min value, max value, count of valid values).
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{leaf_files.png}
+\caption{Example file layout of two parquet files of a dataset}
+\label{fig:partitionedParquet}
+\end{figure}
+
+For very large datasets, it is helpful to have a single file that holds the common header information in all of the partitioned parquet files (assuming that they have homogeneous structure).
+This \texttt{\_common\_metadata} file can be much smaller (and so faster to read) than a leaf parquet file.
+The footers, however, will be different for every file, and some files may contain multiple footers if the data inside a single file is very large.
+These footers can be concatenated into a single \texttt{\_metadata} file, and can provide valuable insight into the distribution of the data. 
+A clever parquet reader can use this information to filter queries to only those partitions where certain values are possible.
+See Figure~\ref{fig:parquetMetadata} for the layout of these parquet metadata files.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{metadata_files.png}
+\caption{Example file layout of two parquet files of a dataset}
+\label{fig:parquetMetadata}
+\end{figure}
+
 
     \subsection{Integration with Existing VO Standards}
     HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps). \par
