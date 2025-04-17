@@ -146,7 +146,7 @@ The additional keywords for the \texttt{collection.properties} file to provide l
     
 
 \subsection{Structure of a catalog} \label{sec:catalog}
-\textcolor{red}{TODO, NEED HELP - is the optional designation correct for each one of these metdata files. Melissa - added required/recommended/optional. fixed names} 
+
 Focusing now on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown in Listing~\ref{fig:exampleCatalogStructure}:
 
 \begin{minipage}{\linewidth}
@@ -198,12 +198,11 @@ dataset/
 \end{lstlisting} 
 \end{minipage}
 
-\textcolor{red}{Melissa - changed the example to use actual numbers, and multiple healpix orders. this mirrors page 8 of https://www.ivoa.net/documents/HiPS/20170519/REC-HIPS-1.0-20170519.pdf}. 
 The data is stored in the parquet files (discussed in Section \ref{sec:parquet}), with one or multiple files being possible in the final directory, i.e., in the ultimate data leaf.  \par 
 If there are multiple files, they should be read together, i.e., we consider them to be one single data unit. 
-In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed additions of files in existing folders.
+In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed, additions of files in existing folders.
 
-Such a directory structure would instead appear as shown in Listing~\ref{fig:datasetWithDir}
+Such a directory structure would appear as shown in Listing~\ref{fig:datasetWithDir}
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example catalog dataset directory contents with leaf directories, label=fig:datasetWithDir]
@@ -233,9 +232,9 @@ dataset/
      \subsection{Structure of files} \label{sec:parquet}
 The astronomical data is stored in *.parquet format. Parquet is a columnar storage file format optimized for efficient data compression and retrieval, especially well-suited for analytical workloads. It is ideal for storing large amounts of astronomical tabular data because it allows fast access to specific columns without reading the entire dataset, significantly reducing I/O and improving performance. \par
 The HATS format RECOMMENDS that the index column of the dataset is \texttt{healpix\_29} index column.  \texttt{healpix\_29} stores the crucial spatial information about the position in the sky for each row, and it is not unique.
-\textcolor{red}{This is calculated as the HEALPix order 29 value of the row's right ascension and decliation. If two objects occur at the same location, or the data is individual observations of the same sky object, then multiple rows may have the same value for the \texttt{healpix\_29} column.
-The existence of this value speeds up downstream spatial calculations, and is beneficial for spatially-intensive applications.}
-\textcolor{red}{TODO, NEED HELP please describe how it is calculated; explain how it is not unique when multiple rows at the same HEALPix of order 29 position} 
+This is calculated as the HEALPix order 29 value of the row's right ascension and decliation. If two objects occur at the same location, or the data is individual observations of the same sky object, then multiple rows may have the same value for the \texttt{healpix\_29} column.
+The existence of this value speeds up downstream spatial calculations, and is beneficial for spatially-intensive applications.
+
 
     \subsection{Metadata and Auxiliary Files} \label{sec:meta}
     HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
@@ -250,9 +249,7 @@ The existence of this value speeds up downstream spatial calculations, and is be
     \end{itemize}
     
     \subsubsection{properties} 
-    \textcolor{red}{TODO, NEED HELP - 1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information} 
-    
-    \textcolor{red}{begin melissa text}
+
 A text file named \texttt{properties} is REQUIRED in the root level of the catalog directory.
 It marks the directory as containing a HATS catalog collection, and so MUST be located in the 
 root of the catalog collection.
@@ -261,7 +258,7 @@ The ordering of the keywords is not important. The keywords MAY include many of 
 
 We enforce additional requirements for the presence of particular fields for different types of HATS tables. 
 A matrix of these requirements is shown in Table~\ref{tab:propertyRequirements}.
-\textcolor{red}{end melissa edit}
+
 
 \footnotesize\begin{longtable}[h!]{D{0.33\textwidth} D{0.67\textwidth}}
 \sptablerule
@@ -362,7 +359,7 @@ obs\_collection &REQ &REQ &REQ &REQ &REQ \\
 \label{tab:propertyRequirements}
 \end{table}
 
-\textcolor{red}{some more melissa text starts}
+
 
 The text file may contain comment lines, beginning with the \texttt{'\#'} character.
 
@@ -388,12 +385,11 @@ hats_version=v0.1
 \end{lstlisting}
 \end{minipage}
 
-\textcolor{red}{some more melissa text ends}
+
 
 
 \subsubsection{partition\_info.csv} 
-   \textcolor{red}{TODO, NEED HELP-1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
-	Norder, Npix  information here. 
+
 
     \textcolor{red}{some more melissa text starts}
 A text file named \texttt{partition\_info.csv} is OPTIONAL and RECOMMENDED in the root level of the catalog directory.
@@ -401,7 +397,7 @@ If present, it MUST be a CSV (comma-separated-values) file, with the columns \te
 Additional columns might be present in the file, but are not required, and may not be interpreted by all HATS readers.
 The values of pairs of \texttt{"Norder"} and \texttt{"Npix"} reflect the HEALPix tiles of the catalog's partitions. 
 HATS readers can quickly read this file to understand the full scope of the catalog, and potential spatial overlap with other catalogs.
-\textcolor{red}{some more melissa text ends}
+
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example \texttt{partition\_info.csv} file contents, label=fig:examplePartitionInfoCsv]    
@@ -415,8 +411,7 @@ Norder,	Npix
 \end{minipage}
 
 \subsubsection{point\_map.fits} 
-   \textcolor{red}{TODO, NEED HELP -1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
-   
+
 A FITS file containing the two-dimensional histogram of points in each HEALPix tile at some reasonably high order.
 This will be at the highest order calculated during the catalog ingestion process (likely 9 or 10). 
 This data is useful when inspecting catalogs and understanding the distribution of data. 
@@ -433,7 +428,6 @@ This file is OPTIONAL and RECOMMENDED for object catalogs.
 
     
         \subsubsection{\_metadata and \_common\_metadata} 
-   \textcolor{red}{TODO, NEED HELP -1. what does it do 2. what is the format 4. what information does it contain, 4. what is the obligatory part of that information}
 
    Many parquet reading frameworks support and recommend additional dataset-level metadata files:
    \begin{itemize}
