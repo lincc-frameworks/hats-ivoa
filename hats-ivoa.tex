@@ -3,20 +3,17 @@
 \usepackage{xcolor}  % for colored text
 \usepackage{longtable}
 \usepackage{array}
+\usepackage{colortbl}
 
 \usepackage{listings}
-\definecolor{mygreen}{rgb}{0,0.6,0}
-\definecolor{mymauve}{rgb}{0.58,0,0.82}
 \lstset{ %
   backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
   basicstyle=\footnotesize\ttfamily,        % the size of the fonts that are used for the code
   breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
   breaklines=true,                 % sets automatic line breaking
   captionpos=b,                    % sets the caption-position to bottom
-  commentstyle=\color{mygreen},    % comment style
   frame=single,                    % adds a frame around the code
   keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
-  keywordstyle=\color{blue},       % keyword style
   language={},                 % the language of the code
   otherkeywords={*,...},            % if you want to add more keywords to the set
   numbers=none,                    % where to put the line-numbers; possible values are (none, left, right)
@@ -24,7 +21,6 @@
   showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
   showstringspaces=false,          % underline spaces within strings only
   showtabs=false,                  % show tabs within strings adding particular underscores
-  stringstyle=\color{mymauve},     % string literal style
   tabsize=2,                       % sets default tabsize to 2 spaces
   title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
 }
@@ -151,7 +147,7 @@ The additional keywords for the \texttt{collection.properties} file to provide l
 
 \subsection{Structure of a catalog} \label{sec:catalog}
 \textcolor{red}{TODO, NEED HELP - is the optional designation correct for each one of these metdata files. Melissa - added required/recommended/optional. fixed names} 
-Focusing now on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown in Figure~\ref{fig:exampleCatalogStructure}:
+Focusing now on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown in Listing~\ref{fig:exampleCatalogStructure}:
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example catalog directory contents, label=fig:exampleCatalogStructure]
@@ -245,7 +241,7 @@ The existence of this value speeds up downstream spatial calculations, and is be
     HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
     \begin{itemize}
     	\item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
-         \item \textbf{[RECOMMENDED] partition\_info.csv}, at  \texttt{catalog} level
+        \item \textbf{[RECOMMENDED] partition\_info.csv}, at  \texttt{catalog} level
         \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
         \item \textbf{[OPTIONAL] data\_thumbnail.parquet}, at  \texttt{catalog} level
         \item \textbf{[REQUIRED] properties}, at  \texttt{catalog} level
@@ -263,10 +259,11 @@ root of the catalog collection.
 It MUST be encoded in UTF-8, with one line per property, following the syntax \texttt{keyword = value}.
 The ordering of the keywords is not important. The keywords MAY include many of those listed in Table~\ref{tab:properties}.
 
-We enforce additional requirements for the presence of particular fields for different types of HATS tables. A matrix of these requirements is shown in Table~\ref{tab:propertyRequirements}
+We enforce additional requirements for the presence of particular fields for different types of HATS tables. 
+A matrix of these requirements is shown in Table~\ref{tab:propertyRequirements}.
 \textcolor{red}{end melissa edit}
-\footnotesize\begin{longtable}[h!]{D{0.33\textwidth} D{0.67\textwidth}}
 
+\footnotesize\begin{longtable}[h!]{D{0.33\textwidth} D{0.67\textwidth}}
 \sptablerule
 \textbf{HATS Keyword}&\textbf{Description - Format - Example}\\
 \sptablerule
@@ -330,14 +327,15 @@ t\_min &Start time of the observations – Format: real – Representation: MJD1
 \label{tab:properties}
 \end{longtable}
 
-\begin{table}[!htb]
-    \begin{center}
-      \begin{tabular}{l c c c c c}
-        \sptablerule
-        &\multicolumn{5}{c}{HATS Catalog Type} \\
-        \textbf{HATS Keyword} & \textbf{object} & \textbf{margin} & \textbf{index} & \textbf{association}  & \textbf{collection} \\
-        \sptablerule
-        all\_indexes & & & & &opt \\
+\begin{table}[h!]
+\rowcolors{2}{white}{gray!20}
+\footnotesize\begin{tabular}{l c c c c c}
+\sptablerule
+\textbf{HATS Keyword} &\multicolumn{5}{c}{\textbf{HATS Catalog Type}} \\
+\rowcolor{white}
+& object & margin & index & association  & collection \\
+\sptablerule
+all\_indexes & & & & &opt \\
 all\_margins & & & & &opt \\
 dataproduct\_type &REQ &REQ &REQ &REQ & \\
 default\_index & & & & &opt \\
@@ -358,18 +356,17 @@ hats\_npix\_suffix &opt &opt &opt &opt & \\
 hats\_nrows &REQ &REQ &REQ &REQ & \\
 hats\_primary\_table\_url & &REQ &REQ &REQ &REQ \\
 obs\_collection &REQ &REQ &REQ &REQ &REQ \\
-        \sptablerule
-    \end{tabular}
-    \caption{Catalog-type specific fields. For display, REQ is REQUIRED, and opt is OPTIONAL}
-    \label{tab:propertyRequirements}
-  \end{center}
+\sptablerule
+\end{tabular}
+\caption{Catalog-type specific fields. For display, REQ is REQUIRED, and opt is OPTIONAL}
+\label{tab:propertyRequirements}
 \end{table}
 
 \textcolor{red}{some more melissa text starts}
 
 The text file may contain comment lines, beginning with the \texttt{'\#'} character.
 
-An example \texttt{properties} file is shown in Figure~\ref{fig:examplePropertiesFile}.
+An example \texttt{properties} file is shown in Listing~\ref{fig:examplePropertiesFile}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example \texttt{properties} file contents, label=fig:examplePropertiesFile]
@@ -400,7 +397,7 @@ hats_version=v0.1
 
     \textcolor{red}{some more melissa text starts}
 A text file named \texttt{partition\_info.csv} is OPTIONAL and RECOMMENDED in the root level of the catalog directory.
-If present, it MUST be a CSV (comma-separated-values) file, with the columns \texttt{"Norder"} and \texttt{"Npix"}, as shown in example contents in Figure~\ref{fig:examplePartitionInfoCsv}
+If present, it MUST be a CSV (comma-separated-values) file, with the columns \texttt{"Norder"} and \texttt{"Npix"}, as shown in example contents in Listing~\ref{fig:examplePartitionInfoCsv}.
 Additional columns might be present in the file, but are not required, and may not be interpreted by all HATS readers.
 The values of pairs of \texttt{"Norder"} and \texttt{"Npix"} reflect the HEALPix tiles of the catalog's partitions. 
 HATS readers can quickly read this file to understand the full scope of the catalog, and potential spatial overlap with other catalogs.
