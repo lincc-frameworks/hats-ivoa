@@ -195,8 +195,47 @@ The existence of this value speeds up downstream spatial calculations, and is be
 
 \subsection{Supplemental Tables} \label{sec:supplemental}
 
+\textcolor{red}{TODO, NEVEN - PLEASE REVIEW THIS SECTION.}
+
+To meet the needs of scalability and efficient query optimization, HATS readers can benefit from alternative arrangements of the data. 
+We refer to these as supplemental tables or supplemental catalogs, and will offer a limited or re-projected view of the primary dataset.
+
 \subsubsection{Margin cache} \label{sec:margin}
+
+\textcolor{red}{TODO, NEVEN - PLEASE REVIEW THIS SECTION.}
+
+A primary motiviation for HATS is rapid cross-matching of different survey datasets. 
+We can handle large datasets by breaking them down into smaller, spatially-connected parts and working on one part at a time.
+However, this introduces a limitation: at the boundaries of a divided section, some data points will be missed because they are present in neighboring partitions instead.
+This has a number of causes (observational error, non-point source positions, proper motion, etc), but should be handled by applications to ensure that you're finding an appropriate counterpart in cross-match.\par
+
+One option would be to load all neighboring partitions when performing a cross-match. 
+However, this would require loading much unneccessary data, as only a small sliver around the edge of a partition might be a candidate for counterparts in neighboring partitions. 
+Figure~\ref{fig:margin} shows some example data points that are near to a HEALPix pixel boundary, and should be included in a cross-match calculation.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{margin-pix.png}
+\caption{Example of margin contents. Green points are present in the primary catalog partition, the blue line is the HEALPix pixel boundary, and yellow points are points in the neighboring pixel that are within 10 arcseconds of the boundary.}
+\label{fig:margin}
+\end{figure}
+
+We address this through the creation of a margin cache.
+This is an additional catalog that contains points in a limited angular threshold around the primary catalog partition.
+The margin data can be loaded alongside the primary catalog partition data during a cross-match operation to account for any positional issues that may arise around the boundaries of the partition's HEALPix pixel.
+
 \subsubsection{Index tables} \label{sec:index}
+
+\textcolor{red}{TODO, NEVEN - PLEASE REVIEW THIS SECTION.}
+
+HATS catalogs are partitioned spatially, on right ascension and declination. 
+This makes finding objects in a particular area of the sky very straightforward. 
+However, you may occassionally only know the object by the survey-assigned identifier, and to find the row, you would have to perform a full scan of all partitions. \par
+
+HATS supports creating additional secondary index tables. 
+In their creation, you perform this full scan and shuffle and write out a simple mapping from the unique identifier to where it can be found in the sky.
+In this way, you can query the index catalog for the HEALPix pixel where the value can be found, and then need only load the primary catalog partition for the corresponding HEALPix pixel.
+
 \subsubsection{Catalog collection} \label{sec:collection}
 
 Margins and indexes are associated with a single astronomical dataset, and to make this connection clearer and enable friendlier application behavior, tables MAY be grouped together under a single directory called a catalog collection.
