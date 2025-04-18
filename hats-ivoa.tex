@@ -195,22 +195,19 @@ The existence of this value speeds up downstream spatial calculations, and is be
 
 \subsection{Supplemental Tables} \label{sec:supplemental}
 
-\textcolor{red}{TODO, NEVEN - PLEASE REVIEW THIS SECTION.}
-
-To meet the needs of scalability and efficient query optimization, HATS readers can benefit from alternative arrangements of the data. 
-We refer to these as supplemental tables or supplemental catalogs, and will offer a limited or re-projected view of the primary dataset.
+To improve scalability and efficient query optimization, HATS readers can benefit from alternative arrangements of the data. 
+We refer to these as supplemental tables or supplemental catalogs, and these offer a limited or re-projected view of the primary dataset.
 
 \subsubsection{Margin cache} \label{sec:margin}
 
-\textcolor{red}{TODO, NEVEN - PLEASE REVIEW THIS SECTION.}
 
-A primary motiviation for HATS is rapid cross-matching of different survey datasets. 
-We can handle large datasets by breaking them down into smaller, spatially-connected parts and working on one part at a time.
-However, this introduces a limitation: at the boundaries of a divided section, some data points will be missed because they are present in neighboring partitions instead.
+One of primary motivations for HATS is rapid cross-matching of different surveys, or different data sources within the same survey. The power of crossmatching in HATS is that each worker gets smaller spatially-connected parts from each dataset and works on them one part at the time. \par 
+
+However, this introduces a limitation: at the boundaries of a divided section, some data points that should be crossmatched will be missed because they are present just across the border in neighboring partitions instead.
 This has a number of causes (observational error, non-point source positions, proper motion, etc), but should be handled by applications to ensure that you're finding an appropriate counterpart in cross-match.\par
 
 One option would be to load all neighboring partitions when performing a cross-match. 
-However, this would require loading much unneccessary data, as only a small sliver around the edge of a partition might be a candidate for counterparts in neighboring partitions. 
+However, this would require loading much unnecessary data, as only a small sliver around the edge of a partition is a candidate for counterparts in neighboring partitions. 
 Figure~\ref{fig:margin} shows some example data points that are near to a HEALPix pixel boundary, and should be included in a cross-match calculation.
 
 \begin{figure}
@@ -226,23 +223,22 @@ The margin data can be loaded alongside the primary catalog partition data durin
 
 \subsubsection{Index tables} \label{sec:index}
 
-\textcolor{red}{TODO, NEVEN - PLEASE REVIEW THIS SECTION.}
-
 HATS catalogs are partitioned spatially, on right ascension and declination. 
 This makes finding objects in a particular area of the sky very straightforward. 
-However, you may occassionally only know the object by the survey-assigned identifier, and to find the row, you would have to perform a full scan of all partitions. \par
+However, you may occasionally only know the object by the survey-assigned identifier, and to find the row, you would have to perform a full scan of all partitions. \par
 
 HATS supports creating additional secondary index tables. 
 In their creation, you perform this full scan and shuffle and write out a simple mapping from the unique identifier to where it can be found in the sky.
-In this way, you can query the index catalog for the HEALPix pixel where the value can be found, and then need only load the primary catalog partition for the corresponding HEALPix pixel.
+In this way, you can query the index catalog for the HEALPix pixel where the value can be found, and then need only load the primary catalog partition for the corresponding HEALPix pixel. This greatly speeds up and facilities the query, as we now have to load only single pixel instead of going through the whole catalog.
+
+\textcolor{red}{TODO: we talk about association catalog in Table 2, but we dont mention it anywhere}
 
 \subsubsection{Catalog collection} \label{sec:collection}
 
 Margins and indexes are associated with a single astronomical dataset, and to make this connection clearer and enable friendlier application behavior, tables MAY be grouped together under a single directory called a catalog collection.
 These include the primary data \texttt{catalog} and other \texttt{catalogs} that are optional and are intended either to improve access to the main \texttt{catalog} or to enrich it with additional information. 
-For instance, one common such \texttt{catalog} is the margin \texttt{catalog}, containing information about objects near the spatial border of each spatial shard. This dramatically simplifies and improves crossmatching ability when using HATS datasets. \par 
+For instance, one common such \texttt{catalog} is the margin \texttt{catalog}, discussed above, containing information about objects near the spatial border of each spatial shard. \par 
 
-\textcolor{red}{TODO, NEED HELP -  Explain the structure of the collection.properties. Explain what the format is, what is contained, what is the obligatory and what is optional information}
 In Listing~\ref{fig:exampleCollectionStructure}, we present an overview of this folder structure, including a few common examples of such optional catalogs.
 The catalog collection directory MUST contain a \texttt{collection.properties} file, whose content is outlined in Section~\ref{sec:collectionProperties}.
 
@@ -268,14 +264,18 @@ gaia_dr3/
     \subsection{Metadata and Auxiliary Files} \label{sec:meta}
     HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
     \begin{itemize}
-    	\item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
+        \item \textbf{[REQUIRED] properties}, at  \texttt{catalog} level    
         \item \textbf{[RECOMMENDED] partition\_info.csv}, at  \texttt{catalog} level
-        \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
-        \item \textbf{[OPTIONAL] data\_thumbnail.parquet}, at  \texttt{catalog} level
-        \item \textbf{[REQUIRED] properties}, at  \texttt{catalog} level
+ \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
+         \item \textbf{[OPTIONAL] data\_thumbnail.parquet}, at  \texttt{catalog} level
         \item \textbf{[RECOMMENDED] \_metadata}, at  \texttt{catalog}/dataset level
         \item \textbf{[RECOMMENDED] \_common\_metadata}, at  \texttt{catalog}/dataset level
-    \end{itemize}
+       \item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
+ \end{itemize}
+    
+Note that collection.properties is only required if you are creating  \texttt{catalog} collection for your dataset. \par 
+We will now go over these files and explain there function, format and their contents. 
+    
     
     \subsubsection{properties} 
 
@@ -347,7 +347,7 @@ obs\_title &Data set title – Format: free text, one line – Ex : HST F110W ob
 prov\_progenitor &Provenance of the original data – Format: free text \\
 publisher\_id &Unique ID of the HATS publisher – Format: IVOID - Ex : ivo://CDS \\
 t\_max &Stop time of the observations – Format: real – Representation: MJD \\
-t\_min &Start time of the observations – Format: real – Representation: MJD1 \\
+t\_min &Start time of the observations – Format: real – Representation: MJD \\
 \sptablerule    
 \caption{Available keys for properties file}
 \label{tab:properties}
@@ -420,7 +420,7 @@ hats_version=v0.1
 \subsubsection{partition\_info.csv} 
 
 
-    \textcolor{red}{some more melissa text starts}
+
 A text file named \texttt{partition\_info.csv} is OPTIONAL and RECOMMENDED in the root level of the catalog directory.
 If present, it MUST be a CSV (comma-separated-values) file, with the columns \texttt{"Norder"} and \texttt{"Npix"}, as shown in example contents in Listing~\ref{fig:examplePartitionInfoCsv}.
 Additional columns might be present in the file, but are not required, and may not be interpreted by all HATS readers.
@@ -464,7 +464,7 @@ The data values are shown in gray, and typically will take up most of the space 
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{leaf_files.png}
-\caption{Example file layout of two parquet files of a dataset}
+\caption{\textcolor{red}{TODO, increase font in the figure } Example file layout of two parquet files of a dataset}
 \label{fig:partitionedParquet}
 \end{figure}
 
@@ -501,7 +501,7 @@ The additional keywords for the \texttt{collection.properties} file to provide l
 \end{itemize}
 
 \section{Performance Considerations}
-Here, we will elaborate on several ways in which this format can be efficiently used. These insights come from our work with LSDB, a Python implementation of a package that works natively with HATS catalogs. \par
+Here, we will elaborate on several ways in which this format can be efficiently used. These insights come from our work with LSDB\footnote{\url{https://lsdb.io}}, a Python implementation of a package that works natively with HATS catalogs. \par
 \subsection{Parquet storage}
 Firstly, we emphasize the need to use the Parquet column filtering. 
 This is a standard practice in SQL-like workflows where a user requests only the columns they need, but it is less common in Python-like workflows. 
@@ -521,7 +521,7 @@ Finally, we want to highlight the exceptional performance possible when crossmat
 Due to its spatial sharding, the crossmatching approach implemented in LSDB is competitive with the existing tools and is more efficient for extensive catalogs, starting with roughly one million rows. 
 Because of the granular spatial structure, the user can increase the number of parallel workers. These will linearly decrease the time needed as long as the number of workers is smaller than the number of partitions in the datasets and there is sufficient I/O speed. 
 In general, for typical cases of large catalogs (billion+ rows), crossmatching on a single core is around 5 to 15\% slower than the pure I/O speed. As discussed above, selecting only specific columns and parallelizing the work can drastically improve performance.   
-\textcolor{red}{TODO, Add citations } 
+
 
     \section{Integration with Existing VO Standards}
     HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps). \par
