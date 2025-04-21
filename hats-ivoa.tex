@@ -231,8 +231,6 @@ HATS supports creating additional secondary index tables.
 In their creation, you perform this full scan and shuffle and write out a simple mapping from the unique identifier to where it can be found in the sky.
 In this way, you can query the index catalog for the HEALPix pixel where the value can be found, and then need only load the primary catalog partition for the corresponding HEALPix pixel. This greatly speeds up and facilities the query, as we now have to load only single pixel instead of going through the whole catalog.
 
-\textcolor{red}{TODO: we talk about association catalog in Table 2, but we dont mention it anywhere}
-
 \subsubsection{Catalog collection} \label{sec:collection}
 
 Margins and indexes are associated with a single astronomical dataset, and to make this connection clearer and enable friendlier application behavior, tables MAY be grouped together under a single directory called a catalog collection.
@@ -260,18 +258,31 @@ gaia_dr3/
     +-- . . .
 \end{lstlisting}
 \end{minipage}
+\textcolor{red}{TODO: we talk about association catalog in Table 2, but we dont mention it anywhere}
+\subsubsection{Association Table} \label{sec:association}
 
-    \subsection{Metadata and Auxiliary Files} \label{sec:meta}
-    HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
-    \begin{itemize}
-        \item \textbf{[REQUIRED] properties}, at  \texttt{catalog} level    
-        \item \textbf{[RECOMMENDED] partition\_info.csv}, at  \texttt{catalog} level
- \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
-         \item \textbf{[OPTIONAL] data\_thumbnail.parquet}, at  \texttt{catalog} level
-        \item \textbf{[RECOMMENDED] \_metadata}, at  \texttt{catalog}/dataset level
-        \item \textbf{[RECOMMENDED] \_common\_metadata}, at  \texttt{catalog}/dataset level
-       \item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
- \end{itemize}
+Noting again that cross-matching and multi-survey analysis is a primary motivator for the HATS spatial format, we introduce the HATS association table. 
+
+This table provides a spatially-sharded set of links between rows in two different object catalogs. 
+This mirrors the relational database notion of a link table, and will likely be composed of the primary survey identifiers from either side of the association.
+We make no prescription as to whether the relationships are one-to-one or one-to-many. \par
+
+There is a single "primary" catalog that reflects the left side, and the other catalog is the "join" catalog (as the data can be joined into the primary catalog).
+The resulting association data will use the coordinates of the primary catalog, and MAY be partitioned with the same pixels as the primary catalog.
+If there are many more or many fewer association links than there are objects in the primary table, it may be preferable to either combine or split the leaf parquet files further.
+
+\subsection{Metadata and Auxiliary Files} \label{sec:meta}
+HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
+\begin{itemize}
+    \item \textbf{[REQUIRED] properties}, at  \texttt{catalog} level    
+    \item \textbf{[RECOMMENDED] partition\_info.csv}, at  \texttt{catalog} level
+    \item \textbf{[RECOMMENDED] partition\_join\_info.csv}, at  \texttt{catalog} level
+    \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
+    \item \textbf{[OPTIONAL] data\_thumbnail.parquet}, at  \texttt{catalog} level
+    \item \textbf{[RECOMMENDED] \_metadata}, at  \texttt{catalog}/dataset level
+    \item \textbf{[RECOMMENDED] \_common\_metadata}, at  \texttt{catalog}/dataset level
+    \item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
+\end{itemize}
     
 Note that collection.properties is only required if you are creating  \texttt{catalog} collection for your dataset. \par 
 We will now go over these files and explain there function, format and their contents. 
@@ -431,11 +442,33 @@ HATS readers can quickly read this file to understand the full scope of the cata
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example \texttt{partition\_info.csv} file contents, label=fig:examplePartitionInfoCsv]    
 Norder,	Npix
-3,	530
-4,	637
-4,	958
-4,	1003
-4,	2147
+3,      530
+4,      637
+4,      958
+4,      1003
+4,      2147
+\end{lstlisting}
+\end{minipage}
+
+\subsubsection{partition\_join\_info.csv} 
+
+A text file named \texttt{partition\_join\_info.csv} is OPTIONAL and RECOMMENDED in the root level of the catalog directory for an association catalog.
+If present, it MUST be a CSV (comma-separated-values) file, with the columns \texttt{"Norder"}, \texttt{"Npix"}, \texttt{"join\_Norder"}, and \texttt{"join\_Npix"}, as shown in example contents in Listing~\ref{fig:examplePartitionJoinInfoCsv}.
+Additional columns might be present in the file, but are not required, and may not be interpreted by all HATS readers.
+The values of pairs of \texttt{"Norder"} and \texttt{"Npix"} reflect the HEALPix tiles of the primary catalog's partitions. 
+The corresponding values of pairs of \texttt{"join\_Norder"} and \texttt{"join\_Npix"} reflect the HEALPix tiles of the join catalog's partitions that have matches inside the primary catalog's partition.
+HATS readers can quickly read this file to understand the full spatial overlap with other catalogs, and plan which leaf partitions of the primary and join catalogs will be loaded. \par
+
+This file is not used for table types that are NOT association tables.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example \texttt{partition\_join\_info.csv} file contents, label=fig:examplePartitionJoinInfoCsv]    
+Norder,	Npix,   join_Norder,    join_Npix
+3,      530,    3,              517
+3,      530,    4,              2120
+3,      530,    4,              2121
+3,      530,    4,              2122
+4,      637,    4,              637
 \end{lstlisting}
 \end{minipage}
 
