@@ -67,8 +67,8 @@ Additionally, we discuss how HATS enhances existing indexing schemes, its role i
 \section*{Acknowledgments}
 The authors thank the IVOA Applications Working Group and various contributors from the astronomical community for their feedback and discussions that shaped this standard. 
 We acknowledge the key collaborations with Space Telescope Science Institute (STScI) and IPAC, whose expertise and contributions have been invaluable in refining the HATS framework. 
-Additionally, we extend our gratitude to  the Strasbourg astronomical Data Center for their assistance in metadata structuring and interoperability support. 
-This work has also benefited from insights provided by the S-Plus survey, Linea, European Space Agency, and Canadian astronomy data center, whose contributions have helped enhance the applicability and robustness of HATS in large-scale astronomical data analysis.
+Additionally, we extend our gratitude to  the Strasbourg astronomical Data Center (CDS) for their assistance in metadata structuring and interoperability support. 
+This work has also benefited from insights provided by the S-Plus survey, Linea, European Space Agency, and Canadian Astronomy Data Center (CADC), whose contributions have helped enhance the applicability and robustness of HATS in large-scale astronomical data analysis.
 \textcolor{red}{TODO: Tidy the author list before sending for internal review.}
 
 \section*{Conformance-related definitions}
@@ -115,12 +115,10 @@ The primary motivation behind HATS is to address the following challenges in ast
 
 \subsection{HATS Catalog Directory Structure} \label{sec:catalog}
 
-The HATS framework relies on spatially sharding catalogs 
-of approximately the same size in Parquet files. Here, we discuss how this is achieved and
-additional concepts that make it easier to use this main idea for astronomical
-research.
+The HATS framework relies on spatially sharding catalogs of approximately the same size in Parquet files. 
+Here, we discuss how this is achieved and additional concepts that make it easier to use this main idea for astronomical research.
 
-The central unit of data storage is HATS \texttt{catalog}. 
+The central unit of data storage is the HATS \texttt{catalog}. 
 It stores the data along with the associated metadata needed to access it. 
 The  \texttt{catalog} organization structure is shown in Listing~\ref{fig:exampleCatalogStructure}.
 
@@ -145,9 +143,9 @@ catalog/
 \end{lstlisting}
 \end{minipage}
 
-The astronomy data is stored in the directory \texttt{dataset}, within the subdirectories that specify the order at which particular part of the dataset is stored. 
-We will discuss the partitioning and data storage in Sections \ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. 
-The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and we will describe them in Section \ref{sec:meta}. 
+The astronomy data is stored in the directory \texttt{dataset}, and further, within the subdirectories that specify the order at which particular part of the dataset is stored. 
+We will discuss the partitioning and data storage in Sections~\ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. 
+The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and we will describe them in Section~\ref{sec:meta}. 
     
 \subsubsection{Hierarchical Directory Structure} \label{sec:hierarchical}
 Focusing now on the dataset's contents, HATS employs a multi-level hierarchy based on HEALPix tiling, where each level represents a progressively finer spatial resolution.
@@ -211,6 +209,8 @@ This threshold can be, most commonly, the number of rows or the size of the data
 At this point, the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
 This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold.
 
+\textcolor{red}{TODO: Melissa thinks description this would benefit from a figure.}
+
 \subsubsection{Structure of Data Files} \label{sec:parquet}
 The astronomical data is stored in \texttt{*.parquet} format. 
 \textcolor{red}{TODO - add a footnote or citation for parquet }
@@ -223,7 +223,7 @@ This is calculated as the HEALPix order 29 value of the row's right ascension an
 If two objects occur at the same location (or the data is individual observations of the same sky object), then multiple rows may have the same value for the \texttt{healpix\_29} column.
 The existence of this value speeds up downstream spatial calculations, and is beneficial for spatially-intensive applications.
 
-Additional optional performance considerations for Parquet files is discussed in Section~\ref{sec:parquetPerformance}
+Additional optional performance considerations for Parquet files is discussed in Section~\ref{sec:parquetPerformance}.
 
 \subsection{Supplemental Tables} \label{sec:supplemental}
 
@@ -233,9 +233,9 @@ We refer to these as supplemental tables or supplemental catalogs, and these off
 \subsubsection{Margin Cache} \label{sec:margin}
 
 One of primary motivations for HATS is rapid cross-matching of different surveys, or different data sources within the same survey. 
-The power of crossmatching in HATS is that each computation unit gets smaller spatially-connected parts from each dataset and works on them one part at the time. \par 
+The power of cross-matching in HATS is that each computation unit gets smaller spatially-connected parts from each dataset and works on them one part at the time. \par 
 
-However, this introduces a limitation: at the boundaries of a divided section, some data points that should be crossmatched will be missed because they are present just across the border in neighboring partitions instead.
+However, this introduces a limitation: at the boundaries of a divided section, some data points that should be cross-matched will be missed because they are present just across the border in neighboring partitions instead.
 This has a number of causes (observational error, non-point source positions, proper motion, etc), but should be handled by applications to ensure that you're finding an appropriate counterpart in cross-match.\par
 
 One option would be to load all neighboring partitions when performing a cross-match. 
@@ -262,10 +262,10 @@ However, you may occasionally only know the object by the survey-assigned identi
 HATS supports creating additional secondary index tables. 
 In their creation, you perform this full scan and shuffle and write out a simple mapping from the unique identifier to where it can be found in the sky.
 In this way, you can query the index catalog for the HEALPix pixel where the value can be found, and then need only load the primary catalog partition for the corresponding HEALPix pixel. 
-This greatly speeds up and facilities the query, as we now have to load only single pixel instead of going through the whole catalog.
+This greatly speeds up and facilitates the query, as we now have to load only single pixel instead of going through the whole catalog.
 These are general secondary indexes, and can be built on any column, not just the survey-assigned identifier.
 
-\subsubsection{Catalog collection} \label{sec:collection}
+\subsubsection{Catalog Collection} \label{sec:collection}
 
 Margins and indexes are associated with a single astronomical dataset, and to make this connection clearer and enable friendlier application behavior, tables MAY be grouped together under a single directory called a catalog collection.
 These include the primary data \texttt{catalog} and other \texttt{catalogs} that are optional and are intended either to improve access to the main \texttt{catalog} or to enrich it with additional information. 
@@ -373,7 +373,7 @@ creator\_did &Unique ID of the HATS - Format: IVOID - Ex : ivo://CDS/P/2MASS/J \
 data\_ucd &UCD describing data contents \\
 dataproduct\_type &Format: one word ONE OF(object, margin, association, index, ...) \\
 default\_index &For catalog collections, the field of the default index to use for ID searches. \\
-default\_margin &For catalog collections, the subdirectory containing the default margin cache to use for crossmatching \\
+default\_margin &For catalog collections, the subdirectory containing the default margin cache to use for cross-matching \\
 hats\_assn\_join\_table\_url &For association tables, there will be a join table with original survey data (right side of the join) \\
 hats\_assn\_leaf\_files &For association tables, does the table contain leaf files (may optionally only provide a "soft" association between tiles only). \\
 hats\_builder &Name and version of the tool used for building the HATS. Format: free text -- Example "hats-import v0.6.4" \\
@@ -597,12 +597,12 @@ These limitations could become prohibitive if this is done over a network or wit
 To alleviate that problem, it is possible to implement a server-side query in which the filtering operations are done server-side, and only the final dataset is sent to a user. 
 Of course, this requires computational resources on the provider's side, but operate on a single file and will benefit from parquet storage optimizations from Section~{sec:parquetPerformance}
 
-\subsection{Crossmatching}
-Finally, we want to highlight the exceptional performance possible when crossmatching HATS catalogs. 
-Due to its spatial sharding, the crossmatching approach implemented in LSDB is competitive with the existing tools and is more efficient for extensive catalogs, starting with roughly one million rows. 
+\subsection{Cross-matching}
+Finally, we want to highlight the exceptional performance possible when cross-matching HATS catalogs. 
+Due to its spatial sharding, the cross-matching approach implemented in LSDB is competitive with the existing tools and is more efficient for extensive catalogs, starting with roughly one million rows. 
 Because of the granular spatial structure, the user can increase the number of parallel computation units. 
 These will linearly decrease the time needed as long as the number of workers is smaller than the number of partitions in the datasets and there is sufficient I/O speed. 
-In general, for typical cases of large catalogs (billion+ rows), crossmatching on a single core is around 5 to 15\% slower than the pure I/O speed. 
+In general, for typical cases of large catalogs (billion+ rows), cross-matching on a single core is around 5 to 15\% slower than the pure I/O speed. 
 As discussed above, selecting only specific columns and parallelizing the work can drastically improve performance.   
 
 \section{Integration with Existing VO Standards}
