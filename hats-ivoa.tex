@@ -8,7 +8,7 @@
 \usepackage{listings}
 \lstset{ %
   backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
-  basicstyle=\footnotesize\ttfamily,        % the size of the fonts that are used for the code
+  basicstyle=\scriptsize\ttfamily,        % the size of the fonts that are used for the code
   breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
   breaklines=true,                 % sets automatic line breaking
   captionpos=b,                    % sets the caption-position to bottom
@@ -60,6 +60,8 @@ HATS provides a flexible, hierarchical approach that balances computational effi
 This document describes the structure, implementation, and best practices for integrating HATS within the VO ecosystem, ensuring interoperability and performance optimization for distributed astronomical datasets. 
 The reference implementation of HATS can be found at \url{https://github.com/astronomy-commons/hats}. 
 Additionally, we discuss how HATS enhances existing indexing schemes, its role in federated data access, and its potential applications for time-domain astronomy, large-scale surveys, and cross-matching of astronomical catalogs.
+
+\textcolor{red}{TODO: we talk about time-domain astronomy here, but there's no elaboration later.}
 \end{abstract}
 
 \section*{Acknowledgments}
@@ -67,7 +69,7 @@ The authors thank the IVOA Applications Working Group and various contributors f
 We acknowledge the key collaborations with Space Telescope Science Institute (STScI) and IPAC, whose expertise and contributions have been invaluable in refining the HATS framework. 
 Additionally, we extend our gratitude to  the Strasbourg astronomical Data Center for their assistance in metadata structuring and interoperability support. 
 This work has also benefited from insights provided by the S-Plus survey, Linea, European Space Agency, and Canadian astronomy data center, whose contributions have helped enhance the applicability and robustness of HATS in large-scale astronomical data analysis.
-
+\textcolor{red}{TODO: Tidy the author list before sending for internal review.}
 
 \section*{Conformance-related definitions}
 The words ``MUST'', ``SHALL'', ``SHOULD'', ``MAY'', ``RECOMMENDED'', and
@@ -99,15 +101,19 @@ Additionally, we discuss how HATS can facilitate efficient cross-matching of ast
 The primary motivation behind HATS is to address the following challenges in astronomical data management:
 \begin{itemize}
     \item \textbf{Scalability:} Modern astronomical surveys generate petabytes of spatially distributed data, requiring an indexing scheme that scales efficiently with dataset size.
-    \item \textbf{Adaptive Resolution:} Fixed grid-based partitioning often leads to inefficient storage and query execution, particularly in non-uniformly distributed datasets. HATS dynamically adjusts tile sizes to accommodate varying data densities.
-    \item \textbf{Efficient Query Execution:} Spatial queries such as nearest-neighbor searches and cross-matching must be executed efficiently across distributed data repositories. HATS enables rapid indexing and retrieval of relevant data subsets.
+    HATS provides files that are similarly-sized, and are well-suited to parallel operations.
+    \textcolor{red}{NEVEN - review! each of the later three bullets says how HATS addresses the problems. similar style added here. }
+    \item \textbf{Adaptive Resolution:} Fixed grid-based partitioning often leads to inefficient storage and query execution, particularly in non-uniformly distributed datasets. 
+    HATS dynamically adjusts tile sizes to accommodate varying data densities.
+    \item \textbf{Efficient Query Execution:} Spatial queries such as nearest-neighbor searches and cross-matching must be executed efficiently across distributed data repositories. 
+    HATS enables rapid indexing and retrieval of relevant data subsets.
     \item \textbf{Interoperability:} Astronomical data is collected from diverse instruments and observatories, often using different spatial reference frames. 
     HATS provides a standardized framework for integrating and harmonizing spatial data across multiple sources.
 \end{itemize}
 
 \section{HATS Design and Implementation}
 
-\subsection{HATS Catalog directory structure} \label{sec:catalog}
+\subsection{HATS Catalog Directory Structure} \label{sec:catalog}
 
 The HATS framework relies on spatially sharding catalogs 
 of approximately the same size in Parquet files. Here, we discuss how this is achieved and
@@ -116,8 +122,7 @@ research.
 
 The central unit of data storage is HATS \texttt{catalog}. 
 It stores the data along with the associated metadata needed to access it. 
-
-Focusing on an individual  \texttt{catalog}, the  \texttt{catalog} organization structure is shown in Listing~\ref{fig:exampleCatalogStructure}:
+The  \texttt{catalog} organization structure is shown in Listing~\ref{fig:exampleCatalogStructure}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example catalog directory contents, label=fig:exampleCatalogStructure]
@@ -141,15 +146,15 @@ catalog/
 \end{minipage}
 
 The astronomy data is stored in the directory \texttt{dataset}, within the subdirectories that specify the order at which particular part of the dataset is stored. 
-We will discuss the the partitioning and data storage in Sections \ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. 
+We will discuss the partitioning and data storage in Sections \ref{sec:hierarchical}, \ref{sec:adaptive} and \ref{sec:parquet}. 
 The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and we will describe them in Section \ref{sec:meta}. 
     
-\subsubsection{Hierarchical Structure} \label{sec:hierarchical}
+\subsubsection{Hierarchical Directory Structure} \label{sec:hierarchical}
 Focusing now on the dataset's contents, HATS employs a multi-level hierarchy based on HEALPix tiling, where each level represents a progressively finer spatial resolution.
 
 All tiles of the same HEALPix order are contained within the same prefix \texttt{Norder=k} directory. 
 To avoid directories becoming too large for some file systems, the tiles are then grouped by a \texttt{Dir} subdirectory prefix,
-where the value of the \texttt{Dir} key is the result of integer divisiion by 10000 of the pixel number.
+where the value of the \texttt{Dir} key is the result of integer division by 10,000 of the pixel number.
 
 We see the directory structure in Listing~\ref{fig:datasetWithLeaf}, showing a dataset with leaf parquet files at several HEALPix orders.
 
@@ -174,7 +179,7 @@ The data is stored in the parquet files (discussed in Section \ref{sec:parquet})
 If there are multiple files, they should be read together, i.e., we consider them to be one single data unit. 
 In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed, additions of files in existing folders.
 
-Such a directory structure would appear as shown in Listing~\ref{fig:datasetWithDir}
+Such a directory structure would appear as shown in Listing~\ref{fig:datasetWithDir}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example catalog dataset directory contents with leaf directories, label=fig:datasetWithDir]
@@ -206,26 +211,29 @@ This threshold can be, most commonly, the number of rows or the size of the data
 At this point, the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
 This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold.
 
-\subsubsection{Structure of files} \label{sec:parquet}
-The astronomical data is stored in *.parquet format. 
+\subsubsection{Structure of Data Files} \label{sec:parquet}
+The astronomical data is stored in \texttt{*.parquet} format. 
+\textcolor{red}{TODO - add a footnote or citation for parquet }
 Parquet is a columnar storage file format optimized for efficient data compression and retrieval, especially well-suited for analytical workloads. 
 It is ideal for storing large amounts of astronomical tabular data because it allows fast access to specific columns without reading the entire dataset, significantly reducing I/O and improving performance. \par
 
-The HATS format RECOMMENDS that the index column of the dataset is \texttt{healpix\_29} index column.  
+The HATS format RECOMMENDS that the first column of the dataset is the \texttt{healpix\_29} index column.  
 \texttt{healpix\_29} stores the crucial spatial information about the position in the sky for each row, and it is not unique.
 This is calculated as the HEALPix order 29 value of the row's right ascension and decliation. 
-If two objects occur at the same location, or the data is individual observations of the same sky object, then multiple rows may have the same value for the \texttt{healpix\_29} column.
+If two objects occur at the same location (or the data is individual observations of the same sky object), then multiple rows may have the same value for the \texttt{healpix\_29} column.
 The existence of this value speeds up downstream spatial calculations, and is beneficial for spatially-intensive applications.
+
+Additional optional performance considerations for Parquet files is discussed in Section~\ref{sec:parquetPerformance}
 
 \subsection{Supplemental Tables} \label{sec:supplemental}
 
 To improve scalability and efficient query optimization, HATS readers can benefit from alternative arrangements of the data. 
 We refer to these as supplemental tables or supplemental catalogs, and these offer a limited or re-projected view of the primary dataset.
 
-\subsubsection{Margin cache} \label{sec:margin}
+\subsubsection{Margin Cache} \label{sec:margin}
 
 One of primary motivations for HATS is rapid cross-matching of different surveys, or different data sources within the same survey. 
-The power of crossmatching in HATS is that each worker gets smaller spatially-connected parts from each dataset and works on them one part at the time. \par 
+The power of crossmatching in HATS is that each computation unit gets smaller spatially-connected parts from each dataset and works on them one part at the time. \par 
 
 However, this introduces a limitation: at the boundaries of a divided section, some data points that should be crossmatched will be missed because they are present just across the border in neighboring partitions instead.
 This has a number of causes (observational error, non-point source positions, proper motion, etc), but should be handled by applications to ensure that you're finding an appropriate counterpart in cross-match.\par
@@ -245,7 +253,7 @@ We address this through the creation of a margin cache.
 This is an additional catalog that contains points in a limited angular threshold around the primary catalog partition.
 The margin data can be loaded alongside the primary catalog partition data during a cross-match operation to account for any positional issues that may arise around the boundaries of the partition's HEALPix pixel.
 
-\subsubsection{Index tables} \label{sec:index}
+\subsubsection{Index Table} \label{sec:index}
 
 HATS catalogs are partitioned spatially, on right ascension and declination. 
 This makes finding objects in a particular area of the sky very straightforward. 
@@ -255,12 +263,12 @@ HATS supports creating additional secondary index tables.
 In their creation, you perform this full scan and shuffle and write out a simple mapping from the unique identifier to where it can be found in the sky.
 In this way, you can query the index catalog for the HEALPix pixel where the value can be found, and then need only load the primary catalog partition for the corresponding HEALPix pixel. 
 This greatly speeds up and facilities the query, as we now have to load only single pixel instead of going through the whole catalog.
+These are general secondary indexes, and can be built on any column, not just the survey-assigned identifier.
 
 \subsubsection{Catalog collection} \label{sec:collection}
 
 Margins and indexes are associated with a single astronomical dataset, and to make this connection clearer and enable friendlier application behavior, tables MAY be grouped together under a single directory called a catalog collection.
 These include the primary data \texttt{catalog} and other \texttt{catalogs} that are optional and are intended either to improve access to the main \texttt{catalog} or to enrich it with additional information. 
-For instance, one common such \texttt{catalog} is the margin \texttt{catalog}, discussed above, containing information about objects near the spatial border of each spatial shard. \par 
 
 In Listing~\ref{fig:exampleCollectionStructure}, we present an overview of this folder structure, including a few common examples of such optional catalogs.
 The catalog collection directory MUST contain a \texttt{collection.properties} file, whose content is outlined in Section~\ref{sec:collectionProperties}.
@@ -296,6 +304,9 @@ There is a single "primary" catalog that reflects the left side, and the other c
 The resulting association data will use the coordinates of the primary catalog, and MAY be partitioned with the same pixels as the primary catalog.
 If there are many more or many fewer association links than there are objects in the primary table, it may be preferable to either combine or split the leaf parquet files further.
 
+\subsubsection{Map Catalog} \label{sec:mapCatalog}
+\textcolor{red}{TODO: we should mention this, as it's very useful for science. }
+
 \subsection{Metadata and Auxiliary Files} \label{sec:meta}
 HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
 \begin{itemize}
@@ -304,26 +315,50 @@ HATS implementations utilize auxiliary files and metadata files to store relevan
     \item \textbf{[RECOMMENDED] partition\_join\_info.csv}, at  \texttt{catalog} level
     \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
     \item \textbf{[OPTIONAL] data\_thumbnail.parquet}, at  \texttt{catalog} level
-    \item \textbf{[RECOMMENDED] \_metadata}, at  \texttt{catalog}/dataset level
-    \item \textbf{[RECOMMENDED] \_common\_metadata}, at  \texttt{catalog}/dataset level
+    \item \textbf{[RECOMMENDED] \_metadata}, at  \texttt{catalog/dataset} level
+    \item \textbf{[RECOMMENDED] \_common\_metadata}, at  \texttt{catalog/dataset} level
     \item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
 \end{itemize}
     
 Note that collection.properties is only required if you are creating  \texttt{catalog} collection for your dataset. \par 
-We will now go over these files and explain there function, format and their contents. 
+We will now go over these files and explain their function, format and their contents. 
     
 \subsubsection{properties} 
 
 A text file named \texttt{properties} is REQUIRED in the root level of the catalog directory.
-It marks the directory as containing a HATS catalog collection, and so MUST be located in the 
-root of the catalog collection.
+It marks the directory as containing a HATS catalog, and so MUST be located in the root directory of the catalog.
 It MUST be encoded in UTF-8, with one line per property, following the syntax \texttt{keyword = value}.
 The ordering of the keywords is not important. The keywords MAY include many of those listed in Table~\ref{tab:properties}.
+
+The text file may contain comment lines, beginning with the \texttt{'\#'} character.
+
+An example \texttt{properties} file is shown in Listing~\ref{fig:examplePropertiesFile}.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example \texttt{properties} file contents, label=fig:examplePropertiesFile]
+#HATS catalog
+obs_collection=euclid_q1_merFinalCatalog
+dataproduct_type=object
+hats_nrows=29767806
+hats_col_ra=RIGHT_ASCENSION
+hats_col_dec=DECLINATION
+hats_cols_sort=OBJECT_ID
+hats_max_rows=1000000
+hats_order=6
+moc_sky_fraction=0.00618
+hats_builder=hats-import v0.4.4
+hats_creation_date=2025-03-20T03\:38UTC
+hats_estsize=23137775
+hats_release_date=2024-09-18
+hats_version=v0.1
+\end{lstlisting}
+\end{minipage}
 
 We enforce additional requirements for the presence of particular fields for different types of HATS tables. 
 A matrix of these requirements is shown in Table~\ref{tab:propertyRequirements}.
 
-\footnotesize\begin{longtable}[h!]{D{0.33\textwidth} D{0.67\textwidth}}
+{\footnotesize
+\begin{longtable}[h!]{D{0.33\textwidth} D{0.67\textwidth}}
 \sptablerule
 \textbf{HATS Keyword}&\textbf{Description - Format - Example}\\
 \sptablerule
@@ -336,60 +371,60 @@ bib\_reference &Bibliographic reference \\
 bib\_reference\_url &URL to bibliographic reference \\
 creator\_did &Unique ID of the HATS - Format: IVOID - Ex : ivo://CDS/P/2MASS/J \\
 data\_ucd &UCD describing data contents \\
-dataproduct\_type &Format: one word ONE OF(object, nested, margin, association, index, ...) \\
+dataproduct\_type &Format: one word ONE OF(object, margin, association, index, ...) \\
 default\_index &For catalog collections, the field of the default index to use for ID searches. \\
 default\_margin &For catalog collections, the subdirectory containing the default margin cache to use for crossmatching \\
-hats\_assn\_join\_table\_url &For association tables (i.e. dataproduct\_type == "association"), there will be a join table with original survey data (right side of the join) \\
-hats\_assn\_leaf\_files &For association tables (i.e. dataproduct\_type == "association"), does the table contain leaf files (may optionally only provide a "soft" association between tiles only). \\
-hats\_builder &Name and version of the tool used for building the HATS – Format: free text -- Example "hats-import v0.6.4" \\
-hats\_col\_assn\_join &For association tables (i.e. dataproduct\_type == "association"),column name for the joining (right) side of the join within the original table \\
-hats\_col\_assn\_join\_assn &For association tables (i.e. dataproduct\_type == "association"), column name in the assocation table for the join (right) side of the association table. \\
-hats\_col\_assn\_primary &For association tables (i.e. dataproduct\_type == "association"), column name for the primary (left) side of the join \\
-hats\_col\_assn\_primary\_assn &For association tables (i.e. dataproduct\_type == "association") column name in the association table that matches the primary (left) side of the join \\
+hats\_assn\_join\_table\_url &For association tables, there will be a join table with original survey data (right side of the join) \\
+hats\_assn\_leaf\_files &For association tables, does the table contain leaf files (may optionally only provide a "soft" association between tiles only). \\
+hats\_builder &Name and version of the tool used for building the HATS. Format: free text -- Example "hats-import v0.6.4" \\
+hats\_col\_assn\_join &For association tables,column name for the joining (right) side of the join within the original table \\
+hats\_col\_assn\_join\_assn &For association tables, column name in the assocation table for the join (right) side of the association table. \\
+hats\_col\_assn\_primary &For association tables, column name for the primary (left) side of the join \\
+hats\_col\_assn\_primary\_assn &For association tables, column name in the association table that matches the primary (left) side of the join \\
 hats\_col\_dec &Column name of the dec coordinate. Used for partitioning and default cross-matching. \\
 hats\_col\_ra &Column name of the ra coordinate. Used for partitioning and default cross-matching. \\
-hats\_cols\_default &Which columns should be read from parquet files, when user doesn't otherwise specify. Useful for wide tables. Format blank separated column names \\
+hats\_cols\_default &Which columns should be read from parquet files, when user doesn't otherwise specify. Useful for wide tables. Format: space-delimited column names \\
 hats\_cols\_sort &At catalog creation time, the columns used to sort the data, in addition to \texttt{healpix\_29} column. \\
 hats\_cols\_survey\_id &The primary key used in the original survey data. May be multiple columns if the survey uses a composite key (e.g. object ID and MJD for detections) \\
 hats\_coordinate\_epoch &For the default ra and dec (hats\_col\_ra, hats\_col\_dec), the measurement epoch \\
 hats\_copyright &Copyright mention associated to the HATS - Format: free text \\
 hats\_creation\_date &HATS first creation date - Format: ISO 8601 => YYYY-mm-ddTHH:MMZ \\
-hats\_creator &Institute or person who built the HATS – Format: free text – Ex : CDS (T.Boch) \\
-hats\_estsize &HATS size estimation – Format: positive integer – Unit : KB \\
-hats\_frame &Coordinate frame reference – Format: word “equatorial” (ICRS), “galactic”, “ecliptic” \\
-hats\_index\_column &For index tables (i.e. dataproduct\_type == "index"), the column that is indexed over \\
-hats\_index\_extra\_column &For index tables (i.e. dataproduct\_type == "index"), extra columns that are carried through with the index \\
+hats\_creator &Institute or person who built the HATS. Format: free text. Ex : CDS (T.Boch) \\
+hats\_estsize &HATS size estimation. Format: positive integer. Unit : KB \\
+hats\_frame &Coordinate frame reference. Format: word "equatorial" (ICRS), "galactic", "ecliptic" \\
+hats\_index\_column &For index tables, the column that is indexed over \\
+hats\_index\_extra\_column &For index tables, extra columns that are carried through with the index \\
 hats\_margin\_threshold &For margin tables, the threshold used for finding points within margin. Units: arcs \\
 hats\_max\_rows &At catalog creation time, the maximum number of rows per file before breaking into 4 new files at higher order. \\
-hats\_nrows &Number of rows of the HATS catalog – Format: positive integer \\
-hats\_order &Deepest HATS order – Format: positive integer \\
-hats\_primary\_table\_url &For supplemental tables (i.e. dataproduct\_type <> "object"), there will be a primary table with original survey data. \\
+hats\_nrows &Number of rows of the HATS catalog. Format: positive integer \\
+hats\_order &Deepest HATS order. Format: positive integer \\
+hats\_primary\_table\_url &For supplemental tables , there will be a primary table with original survey data. \\
 hats\_progenitor\_url &URL to an associated progenitor HATS \\
 hats\_release\_date &Last HATS update date - Format: ISO 8601 => YYYY-mm-ddTHH:MMZ \\
-hats\_service\_url &HATS access url – Format: URL \\
-hats\_status &HATS status – Format: list of blank separated words (private” or “public”), (“main”, “mirror”, or “partial”), (“clonable”, “unclonable” or “clonableOnce”) – Default : public main clonableOnce \\
-hats\_version &Number of HATS version – Format: 0.1 (corresponds to this specification document) \\
-moc\_sky\_fraction &Fraction of the sky covers by the MOC associated to the HATS – Format: real between 0 and 1 \\
+hats\_service\_url &HATS access url. Format: URL \\
+hats\_status &HATS status. Format: list of space-delimited words ("private" or "public"), ("main", "mirror", or "partial"), ("clonable", "unclonable" or "clonableOnce"). Default : public main clonableOnce \\
+hats\_version &Number of HATS version. Format: 0.1 (corresponds to version of this note) \\
+moc\_sky\_fraction &Fraction of the sky covered by the MOC associated to the HATS. Format: real between 0 and 1 \\
 npix\_suffix & String to indicate file suffix for leaf files. In the typical HATS directory structure, this is \texttt{'.parquet'} or \texttt{'.pq'} because there is a single file in each Npix partition. If using leaf directories, \texttt{'/'}. \\
 obs\_ack &Acknowledgment mention. \\
-obs\_collection &Short name of original data set – Format: one word – Ex : 2MASS \\
-obs\_copyright &Copyright mention associated to the original data – Format: free text \\
+obs\_collection &Short name of original data set. Format: one word. Ex : 2MASS \\
+obs\_copyright &Copyright mention associated to the original data. Format: free text \\
 obs\_copyright\_url &URL to a copyright mention \\
-obs\_description &Data set description – Format: free text, longer free text description of the dataset \\
-obs\_regime &General wavelength – Format: word: "Radio" | "Millimeter" | "Infrared" | "Optical" | "UV" | "EUV" | "X-ray" | "Gamma-ray" \\
-obs\_title &Data set title – Format: free text, one line – Ex : HST F110W observations \\
-prov\_progenitor &Provenance of the original data – Format: free text \\
-publisher\_id &Unique ID of the HATS publisher – Format: IVOID - Ex : ivo://CDS \\
-t\_max &Stop time of the observations – Format: real – Representation: MJD \\
-t\_min &Start time of the observations – Format: real – Representation: MJD \\
+obs\_description &Data set description. Format: free text, longer free text description of the dataset \\
+obs\_regime &General wavelength. Format: word: "Radio" | "Millimeter" | "Infrared" | "Optical" | "UV" | "EUV" | "X-ray" | "Gamma-ray" \\
+obs\_title &Data set title. Format: free text, one line. Ex : HST F110W observations \\
+prov\_progenitor &Provenance of the original data. Format: free text \\
+publisher\_id &Unique ID of the HATS publisher. Format: IVOID - Ex : ivo://CDS \\
+t\_max &Stop time of the observations. Format: real. Representation: MJD \\
+t\_min &Start time of the observations. Format: real. Representation: MJD \\
 \sptablerule    
 \caption{Available keys for properties file}
 \label{tab:properties}
-\end{longtable}
+\end{longtable}}
 
 \begin{table}[h!]
 \rowcolors{2}{white}{gray!20}
-\footnotesize\begin{tabular}{l c c c c c}
+{\footnotesize\begin{tabular}{l c c c c c}
 \sptablerule
 \textbf{HATS Keyword} &\multicolumn{5}{c}{\textbf{HATS Catalog Type}} \\
 \rowcolor{white}
@@ -417,36 +452,10 @@ hats\_nrows &REQ &REQ &REQ &REQ & \\
 hats\_primary\_table\_url & &REQ &REQ &REQ &REQ \\
 obs\_collection &REQ &REQ &REQ &REQ &REQ \\
 \sptablerule
-\end{tabular}
+\end{tabular}}
 \caption{Catalog-type specific fields. For display, REQ is REQUIRED, and opt is OPTIONAL}
 \label{tab:propertyRequirements}
 \end{table}
-
-
-
-The text file may contain comment lines, beginning with the \texttt{'\#'} character.
-
-An example \texttt{properties} file is shown in Listing~\ref{fig:examplePropertiesFile}.
-
-\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption=Example \texttt{properties} file contents, label=fig:examplePropertiesFile]
-#HATS catalog
-obs_collection=euclid_q1_merFinalCatalog
-dataproduct_type=object
-hats_nrows=29767806
-hats_col_ra=RIGHT_ASCENSION
-hats_col_dec=DECLINATION
-hats_cols_sort=OBJECT_ID
-hats_max_rows=1000000
-hats_order=6
-moc_sky_fraction=0.00618
-hats_builder=hats-import v0.4.4
-hats_creation_date=2025-03-20T03\:38UTC
-hats_estsize=23137775
-hats_release_date=2024-09-18
-hats_version=v0.1
-\end{lstlisting}
-\end{minipage}
 
 \subsubsection{partition\_info.csv} 
 
@@ -491,7 +500,8 @@ Norder,	Npix,   join_Norder,    join_Npix
 
 \subsubsection{point\_map.fits} 
 
-A FITS file containing the two-dimensional histogram of points in each HEALPix tile at some reasonably high order.
+A FITS file containing the MOC (multi-order coverage map) of the catalog.
+This is a two-dimensional histogram of points in each HEALPix tile at some reasonably high order.
 This will be at the highest order calculated during the catalog ingestion process (likely 9 or 10). 
 This data is useful when inspecting catalogs and understanding the distribution of data. 
 
@@ -505,6 +515,8 @@ This file allows a user to get a quick overview of the whole dataset in the same
 Given how it is sampled, it will cover the entire width of the dataset and give a user an accurate overview of the properties of the dataset. 
 In such a way, it is superior and more convenient than pointing a user to take out a subset of a single Parquet data leaf for testing. 
 
+This file is OPTIONAL and RECOMMENDED for object catalogs.
+
 \subsubsection{\_metadata and \_common\_metadata} 
 
 Many parquet reading frameworks support and recommend additional dataset-level metadata files:
@@ -514,11 +526,13 @@ Many parquet reading frameworks support and recommend additional dataset-level m
     \item \texttt{\_metadata} contains per-partition information, chiefly the footer information of all constituent parquet files which contain aggregate statistics.
 \end{itemize}
 
-To understand the value of these files, it is helpful to understand the structure of partitioned parquet files. 
+Both files are OPTIONAL and RECOMMENDED for all catalogs.
+
+To understand the importance of these files, it is helpful to understand the structure of partitioned parquet files. 
 Figure~\ref{fig:partitionedParquet} shows a schematic of two partitioned parquet files. 
 There is some top-level metadata that may describe the full dataset, as well as column-level key-value metadata.
 The data values are shown in gray, and typically will take up most of the space of the parquet file. 
-Parquet files may also have footers which contain aggregate statistics about each column (the min value, max value, count of valid values).
+Parquet files will also have footers which may contain aggregate statistics about each column (the min value, max value, count of valid values).
 
 \begin{figure}
 \centering
@@ -537,7 +551,7 @@ See Figure~\ref{fig:parquetMetadata} for the layout of these parquet metadata fi
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{metadata_files.png}
-\caption{Example file layout of two parquet files of a dataset}
+\caption{Example file layout of two supplemental parquet files of a dataset}
 \label{fig:parquetMetadata}
 \end{figure}
 
@@ -546,23 +560,27 @@ A text file named \texttt{collection.properties} is REQUIRED for a catalog colle
 It marks the directory as containing a catalog collection, and so MUST be located in the 
 root of the catalog collection.
 It MUST be encoded in UTF-8, with one line per property, following the syntax \texttt{keyword = value}.
-The ordering of the keywords is not important. The keywords MAY include many of those listed in Table~\ref{tab:properties}.
+The ordering of the keywords is not important. 
+The keywords MAY include many of those listed in Table~\ref{tab:properties}, with collection-specific fields shown in Table~\ref{tab:propertyRequirements}.
 
-The additional keywords for the \texttt{collection.properties} file to provide linking between catalogs and supplementing tables are:
+The text file may contain comment lines, beginning with the \texttt{'\#'} character.
+An example \texttt{properties} file is shown in Listing~\ref{fig:exampleCollectionPropertiesFile}.
 
-\begin{itemize}
-    \item \texttt{name} human-readable name of the collection
-    \item \texttt{hats\_primary\_table\_url} subdirectory of the collection for the primary catalog
-    \item \texttt{all\_margins} space-delimited list of margin cache tables
-    \item \texttt{default\_margin} the default margin to be used for cross-matching
-    \item \texttt{all\_indexes} space-delimited list of index tables
-    \item \texttt{default\_index} the default index to be used for id searches (will typically be the survey identifier)
-\end{itemize}
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example \texttt{collection.properties} file contents, label=fig:exampleCollectionPropertiesFile]
+#HATS Collection
+obs_collection=gaia_dr3
+hats_primary_table_url=gaia
+all_margins=gaia_5arcs gaia_1arcs
+default_margin=gaia_5arcs
+all_indexes=designation designation_index
+\end{lstlisting}
+\end{minipage}
 
 \section{Performance Considerations}
 Here, we will elaborate on several ways in which this format can be efficiently used. These insights come from our work with LSDB\footnote{\url{https://lsdb.io}}, a Python implementation of a package that works natively with HATS catalogs. \par
 
-\subsection{Parquet storage}
+\subsection{Parquet Storage}\label{sec:parquetPerformance}
 Firstly, we emphasize the need to use the Parquet column filtering. 
 This is a standard practice in SQL-like workflows where a user requests only the columns they need, but it is less common in Python-like workflows. 
 Loading into memory the columns that a user needs for scientific analysis, usually a couple out of tens or hundreds available, significantly reduced the computational requirements for the analysis.  \par 
@@ -572,17 +590,17 @@ This can significantly increase the efficiency of particular queries, especially
 For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
 This is because we don't have to load the entire Parquet file into memory, only this tiny rowgroup part, in order to retrieve the needed row from the user. \par 
 
-\subsection{HTTP services}
-The fact that the data can be stored on the hard drive and served to the users simplifies the cost structure for catalog providers. 
+\subsection{HTTP Services}
+The fact that the data can be stored on the hard drive and served at rest to the users simplifies the cost structure for catalog providers. 
 Still, a user operating on the dataset, even if they are doing aggressive filtering and requesting a minimal number of rows at the end, will have to effectively transfer a large amount of data over to their client, where the filtering is done. 
 These limitations could become prohibitive if this is done over a network or with limited bandwidth. 
 To alleviate that problem, it is possible to implement a server-side query in which the filtering operations are done server-side, and only the final dataset is sent to a user. 
-Of course, this requires computational resources on the provider's side.
+Of course, this requires computational resources on the provider's side, but operate on a single file and will benefit from parquet storage optimizations from Section~{sec:parquetPerformance}
 
 \subsection{Crossmatching}
 Finally, we want to highlight the exceptional performance possible when crossmatching HATS catalogs. 
 Due to its spatial sharding, the crossmatching approach implemented in LSDB is competitive with the existing tools and is more efficient for extensive catalogs, starting with roughly one million rows. 
-Because of the granular spatial structure, the user can increase the number of parallel workers. 
+Because of the granular spatial structure, the user can increase the number of parallel computation units. 
 These will linearly decrease the time needed as long as the number of workers is smaller than the number of partitions in the datasets and there is sufficient I/O speed. 
 In general, for typical cases of large catalogs (billion+ rows), crossmatching on a single core is around 5 to 15\% slower than the pure I/O speed. 
 As discussed above, selecting only specific columns and parallelizing the work can drastically improve performance.   
