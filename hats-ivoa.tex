@@ -60,9 +60,8 @@ The Hierarchical Adaptive Tiling Scheme (HATS) is a framework designed to facili
 Traditional spatial indexing methods often struggle with the massive scale of modern astronomical datasets, leading to inefficient query execution and storage overhead. 
 HATS provides a flexible, hierarchical approach that balances computational efficiency and adaptability to non-uniform data distributions.\par
 
-This document describes the structure, implementation, and best practices for integrating HATS within the VO ecosystem, ensuring interoperability and performance optimization for distributed astronomical datasets. 
+This document describes the structure, implementation, and best practices for integrating HATS within the VO ecosystem, ensuring interoperability and performance optimization for distributed astronomical datasets. We discuss how HATS enhances existing indexing schemes, its role in federated data access, and how it enables powerful applications for large-scale survey science and efficient cross-matching of astronomical catalogs. \par 
 The reference implementation of HATS can be found at \url{https://github.com/astronomy-commons/hats}. 
-Additionally, we discuss how HATS enhances existing indexing schemes, its role in federated data access, its potential applications for large-scale surveys, and powerful cross-matching of astronomical catalogs.
 
 
 \end{abstract}
@@ -108,7 +107,7 @@ Additionally, we discuss how HATS can facilitate efficient cross-matching of ast
 The primary motivation behind HATS is to address the following challenges in astronomical data management:
 \begin{itemize}
     \item \textbf{Scalability:} Modern astronomical surveys generate petabytes of spatially distributed data, requiring an indexing scheme that scales efficiently with dataset size.
-    HATS provides such an indexing scheme, and creates files that have size and shape that is well-suited to parallel operations.
+    HATS provides such an indexing scheme, and creates files that have both properties and size that is well-suited to parallel operations.
     \item \textbf{Adaptive Resolution:} Fixed grid-based partitioning often leads to inefficient storage and query execution, particularly in non-uniformly distributed datasets. 
     HATS dynamically adjusts tile sizes to accommodate varying data densities.
     \item \textbf{Efficient Query Execution:} Spatial queries such as nearest-neighbor searches and cross-matching must be executed efficiently across distributed data repositories. 
@@ -212,7 +211,7 @@ In areas with sparse data, larger tiles minimize storage overhead, whereas high-
 
 The data is stored at a given level until the dataset size crosses a predetermined threshold. 
 This threshold can be, most commonly, the number of rows or the size of the data on the disk. 
-At this point, the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
+As we add the data, t the point that the threshold is reached the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
 This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold. We show an example of the result of this procedure in Figure \ref{fig:order}.
 
 \begin{figure}
@@ -315,8 +314,8 @@ There is a single "primary" catalog that reflects the left side, and the other c
 The resulting association data will use the coordinates of the primary catalog, and MAY be partitioned with the same pixels as the primary catalog.
 If there are many more or many fewer association links than there are objects in the primary table, it may be preferable to either combine or split the leaf parquet files further.
 
-\subsubsection{Map Catalog} \label{sec:mapCatalog}
-\textcolor{red}{TODO: we should mention this, as it's very useful for science. }
+% \subsubsection{Map Catalog} \label{sec:mapCatalog}
+% \textcolor{red}{TODO: we should mention this, as it's very useful for science. }
 
 \subsection{Metadata and Auxiliary Files} \label{sec:meta}
 HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
@@ -597,22 +596,22 @@ This is a standard practice in SQL-like workflows where users request only the n
 Loading into memory the columns that a user needs for scientific analysis, usually a couple out of tens or hundreds available, significantly reduced the computational requirements for the analysis.  \par 
 We can also split Parquet files into so-called rowgroups, splitting Parquet into chunks with a fixed number of rows. 
 Parquet readers can skip over entire row groups if they don't contain relevant data. 
-This can significantly increase the efficiency of particular queries, especially if the rowgroups are selected in a specific way appropriate for the scientific case. 
+This is especially effective when row groups are designed to match the access patterns of a specific scientific use case. 
 For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
-Speed up happens because we don't have to load the entire Parquet file into memory, only this tiny rowgroup part, to retrieve the needed row from the user. \par 
+Speed-up happens because we don't have to load the entire Parquet file into memory, but only the smaller rowgroup, to retrieve the needed row with the required identification number.\par 
 
 \subsection{HTTP Services}
 The fact that the data can be stored on the hard drive and served at rest to the users simplifies the cost structure for catalog providers. 
-Still, a user operating on the dataset, even if they are doing aggressive filtering and requesting a minimal number of rows at the end, will have to effectively transfer a large amount of data to their client, where the filtering is done. 
+However, a user operating on the dataset, even if they are doing aggressive filtering and requesting a minimal number of rows at the end, will still have to transfer a large amount of data to their client, where the filtering is actually conducted. 
 These limitations could become prohibitive if done over a network or with limited bandwidth. 
 To alleviate that problem, it is possible to implement a server-side query in which the filtering operations are done server-side, and only the final dataset is sent to a user. 
-Of course, this requires computational resources on the provider's side, but operates on a single file and will benefit from parquet storage optimizations from Section~{sec:parquetPerformance}
+Of course, this requires computational resources on the provider's side, but operates on a single file and will benefit from parquet storage optimizations from Section~\ref{sec:parquetPerformance}
 
 \subsection{Cross-matching}
 Finally, we want to highlight the exceptional performance possible when cross-matching HATS catalogs. 
-Due to its spatial sharding, the cross-matching approach implemented in LSDB is competitive with the existing tools and is more efficient for extensive catalogs, starting with roughly one million rows. 
-Because of the granular spatial structure, the user can increase the number of parallel computation units. 
-These will linearly decrease the time needed as long as the number of workers is smaller than the number of partitions in the datasets and there is sufficient I/O speed. 
+Due to its spatial sharding, the cross-matching approach implemented in LSDB is competitive with the existing tools for small data, and is more efficient for large catalogs, starting with roughly one million rows. 
+The key advantage lies in the fine-grained spatial partitioning: each data chunk is designed to fit comfortably into memory, allowing efficient parallel processing without memory bottlenecks. Users can increase the number of parallel computation units, and—provided the number of workers remains below the number of partitions and I/O throughput is sufficient—achieve near-linear scaling. \par 
+
 For typical cases of large catalogs (billion+ rows), cross-matching on a single core is around 5 to 15\% slower than the pure I/O speed. 
 As discussed above, selecting only specific columns and parallelizing the work can drastically improve performance.   
 
@@ -626,12 +625,11 @@ As discussed above, selecting only specific columns and parallelizing the work c
 \label{fig:archdiag}
 \end{figure}
 
-Figure.~\ref{fig:archdiag} shows the role this document plays within the IVOA architecture.
+Figure~\ref{fig:archdiag} shows the role this document plays within the IVOA architecture.
 
 HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix \citep{gorski:healpix} and MOC (Multi-Order Coverage maps) \citep{ivoa:MOC}. \par
-We use nested HEALPix tessellation technique extensively.
-The full footprint of the catalog can alternatively be represented by a MOC, as it is a list of HEALPix pixels, at many different HEALPix orders
-\textcolor{red}{TODO, NEED HELP, especially with MOC: explain more how is it compatible}. \par 
+It builds upon the nested HEALPix tessellation scheme, which provides a hierarchical and uniform way to partition the celestial sphere. This structure is central to HATS: both the storage layout and the spatial indexing are defined in terms of HEALPix pixels.
+The full footprint of the catalog can alternatively be represented by a MOC, as it is a list of HEALPix pixels, at many different HEALPix orders. \par 
 
 The HATS format can be made to be compatible with the TAP query by implementing a translation layer between the TAP query language. 
 We have explored some initial implementation of such functionality, but the implementation details will always depend on the language used to handle the Parquet files. \par
