@@ -1,0 +1,46 @@
+<!--
+Document authors (ivoatex maintainers have different rules):
+
+* svn cp this file to role_diagram.xml, and then:
+
+* Remove all <rec> elements in there referring to standards not related
+  to the current one,
+
+* change the tag name for the current one from rec to thisrec
+
+* make role_diagram.pdf
+
+For the time being, keep both role_diagram.pdf and role_diagram.svg as
+created by this in the VCS.  This helps document builds on machines
+with missing dependencies.
+
+
+Archdiag maintainers: When adding boxes here, first look for a good place,
+preferably in one of the grid positions given in the comments for the
+WGs (e.g., 55 for Registry).  Good y positions are ones that already
+exist.  Leave out the w at first.
+
+Then, run
+
+make archdiag-debug.svg
+
+and open archdiag-debug.svg in a javascript-enabled browser.  In that 
+browser's javascript console you will see lines like:
+
+SpectralDM: 67; 11.5
+
+The first number is the box's natural width, which you should use in the w
+attribute of the rec/prerec.  The second is the offset to x you'd need to
+add to one of the x grid lines (the x=something in the opening comments
+of the various sections) to have the box centered.
+-->
+
+<archdiag xmlns="http://ivoa.net/archdiag">
+
+	<rec name="MOC" x="430" y="400"/>
+    
+    <rec name="VOParquet" x="440" y="470"/>
+
+	<thisrec name="HATS" x="210" y="470"/>
+
+</archdiag>

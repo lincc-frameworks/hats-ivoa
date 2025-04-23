@@ -32,6 +32,11 @@ VECTORFIGURES =
 # Additional files to distribute (e.g., CSS, schema files, examples...)
 AUX_FILES =
 
+
+# List of PDF figures (figures that must be converted to pixel images to
+# work in web browsers).
+VECTORFIGURES = role_diagram.pdf
+
 -include ivoatex/Makefile
 
 ivoatex/Makefile:

@@ -616,11 +616,26 @@ These will linearly decrease the time needed as long as the number of workers is
 For typical cases of large catalogs (billion+ rows), cross-matching on a single core is around 5 to 15\% slower than the pure I/O speed. 
 As discussed above, selecting only specific columns and parallelizing the work can drastically improve performance.   
 
-\section{Integration with Existing VO Standards}
+\section{Role within the VO Architecture}
+
+\begin{figure}
+\centering
+
+\includegraphics[width=0.9\textwidth]{role_diagram.pdf}
+\caption{Architecture diagram for this document}
+\label{fig:archdiag}
+\end{figure}
+
+Fig.~\ref{fig:archdiag} shows the role this document plays within the IVOA architecture.
+
 HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix \citep{gorski:healpix} and MOC (Multi-Order Coverage maps) \citep{ivoa:MOC}. \par
+We use nested HEALPix tessellation technique extensively.
+The full footprint of the catalog can alternatively be represented by a MOC, as it is a list of HEALPix pixels, at many different HEALPix orders
 \textcolor{red}{TODO, NEED HELP, especially with MOC: explain more how is it compatible}. \par 
+
 The HATS format can be made to be compatible with the TAP query by implementing a translation layer between the TAP query language. 
 We have explored some initial implementation of such functionality, but the implementation details will always depend on the language used to handle the Parquet files. \par
+
 We are closely following the development of the VOParquet format and aim to implement it as a part of HATS catalogs.
 
 \appendix
