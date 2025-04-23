@@ -39,12 +39,15 @@
 \ivoagroup{Applications Group}
 
 \author[https://www.ivoa.net/authors/caplar]{Neven Caplar}
-\author[https://www.ivoa.net/authors/usher]{Melissa DeLucchi}
-\author[https://www.ivoa.net/authors/caplar]{Sean McGuire}
-\author[https://www.ivoa.net/authors/usher]{Sandro Campos}
-\author[https://www.ivoa.net/authors/caplar]{Derek Jones}
-\author[https://www.ivoa.net/authors/usher]{Doug Branton}
-\author[https://www.ivoa.net/authors/offline]{LINCC team...}
+\author[https://www.ivoa.net/authors/delucchi]{Melissa DeLucchi}
+\author[https://www.ivoa.net/authors/beebe]{Wilson Beebe}
+\author[https://www.ivoa.net/authors/branton]{Doug Branton}
+\author[https://www.ivoa.net/authors/campos]{Sandro Campos}
+\author[https://www.ivoa.net/authors/jones]{Derek Jones}
+\author[https://www.ivoa.net/authors/malanchev]{Konstantin Malanchev}
+\author[https://www.ivoa.net/authors/mcguire]{Sean McGuire}
+\author[https://www.ivoa.net/authors/lynn]{Olivia Lynn}
+\author[https://www.ivoa.net/authors/juric]{Mario Juric}
 
 \editor{editor here}
 
@@ -55,21 +58,25 @@
 The increasing complexity and volume of astronomical datasets necessitate efficient spatial indexing and query strategies within the Virtual Observatory (VO). 
 The Hierarchical Adaptive Tiling Scheme (HATS) is a framework designed to facilitate scalable queries, filtering operations, and efficient data retrieval across large astronomical surveys. 
 Traditional spatial indexing methods often struggle with the massive scale of modern astronomical datasets, leading to inefficient query execution and storage overhead. 
-HATS provides a flexible, hierarchical approach that balances computational efficiency and adaptability to non-uniform data distributions.
+HATS provides a flexible, hierarchical approach that balances computational efficiency and adaptability to non-uniform data distributions.\par
 
 This document describes the structure, implementation, and best practices for integrating HATS within the VO ecosystem, ensuring interoperability and performance optimization for distributed astronomical datasets. 
 The reference implementation of HATS can be found at \url{https://github.com/astronomy-commons/hats}. 
-Additionally, we discuss how HATS enhances existing indexing schemes, its role in federated data access, and its potential applications for time-domain astronomy, large-scale surveys, and cross-matching of astronomical catalogs.
+Additionally, we discuss how HATS enhances existing indexing schemes, its role in federated data access, its potential applications for large-scale surveys, and powerful cross-matching of astronomical catalogs.
 
-\textcolor{red}{TODO: we talk about time-domain astronomy here, but there's no elaboration later.}
+
 \end{abstract}
 
 \section*{Acknowledgments}
 The authors thank the IVOA Applications Working Group and various contributors from the astronomical community for their feedback and discussions that shaped this standard. 
 We acknowledge the key collaborations with Space Telescope Science Institute (STScI) and IPAC, whose expertise and contributions have been invaluable in refining the HATS framework. 
 Additionally, we extend our gratitude to  the Strasbourg astronomical Data Center (CDS) for their assistance in metadata structuring and interoperability support. 
-This work has also benefited from insights provided by the S-Plus survey, Linea, European Space Agency, and Canadian Astronomy Data Center (CADC), whose contributions have helped enhance the applicability and robustness of HATS in large-scale astronomical data analysis.
-\textcolor{red}{TODO: Tidy the author list before sending for internal review.}
+This work has also benefited from insights provided by the S-Plus survey, Linea, European Space Agency, and Canadian Astronomy Data Center (CADC), whose contributions have helped enhance the applicability and robustness of HATS in large-scale astronomical data analysis. \par
+
+This project is supported by Schmidt Sciences.
+This project is based upon work supported by the National Science Foundation under Grant No. AST-2003196.
+This project acknowledges support from the DIRAC Institute in the Department of Astronomy at the University of Washington. The DIRAC Institute is supported through generous gifts from the Charles and Lisa Simonyi Fund for Arts and Sciences, and the Washington Research Foundation.
+
 
 \section*{Conformance-related definitions}
 The words ``MUST'', ``SHALL'', ``SHOULD'', ``MAY'', ``RECOMMENDED'', and
@@ -101,8 +108,7 @@ Additionally, we discuss how HATS can facilitate efficient cross-matching of ast
 The primary motivation behind HATS is to address the following challenges in astronomical data management:
 \begin{itemize}
     \item \textbf{Scalability:} Modern astronomical surveys generate petabytes of spatially distributed data, requiring an indexing scheme that scales efficiently with dataset size.
-    HATS provides files that are similarly-sized, and are well-suited to parallel operations.
-    \textcolor{red}{NEVEN - review! each of the later three bullets says how HATS addresses the problems. similar style added here. }
+    HATS provides such an indexing scheme, and creates files that have size and shape that is well-suited to parallel operations.
     \item \textbf{Adaptive Resolution:} Fixed grid-based partitioning often leads to inefficient storage and query execution, particularly in non-uniformly distributed datasets. 
     HATS dynamically adjusts tile sizes to accommodate varying data densities.
     \item \textbf{Efficient Query Execution:} Spatial queries such as nearest-neighbor searches and cross-matching must be executed efficiently across distributed data repositories. 
@@ -207,13 +213,18 @@ In areas with sparse data, larger tiles minimize storage overhead, whereas high-
 The data is stored at a given level until the dataset size crosses a predetermined threshold. 
 This threshold can be, most commonly, the number of rows or the size of the data on the disk. 
 At this point, the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
-This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold.
+This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold. We show an example of the result of this procedure in Figure \ref{fig:order}.
 
-\textcolor{red}{TODO: Melissa thinks description this would benefit from a figure.}
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{order-pix.png}
+\caption{Adaptive tiling for the object catalog of Zwicky Transient Facility, Data Release 14 \citep{ztf:Bellm2019, ztf:Masci2019} To achieve similar number of rows in all parts of the sky, we have to partition galactic region further, resulting in tiles of higher HEALPIX order in galactic plane, and especially near the galactic bulge. }
+\label{fig:order}
+\end{figure}
+
 
 \subsubsection{Structure of Data Files} \label{sec:parquet}
-The astronomical data is stored in \texttt{*.parquet} format. 
-\textcolor{red}{TODO - add a footnote or citation for parquet }
+The astronomical data is stored in \texttt{*.parquet} format \footnote{\href{https://parquet.apache.org}{https://parquet.apache.org}}.
 Parquet is a columnar storage file format optimized for efficient data compression and retrieval, especially well-suited for analytical workloads. 
 It is ideal for storing large amounts of astronomical tabular data because it allows fast access to specific columns without reading the entire dataset, significantly reducing I/O and improving performance. \par
 
@@ -291,7 +302,7 @@ gaia_dr3/
     +-- . . .
 \end{lstlisting}
 \end{minipage}
-\textcolor{red}{TODO: we talk about association catalog in Table 2, but we dont mention it anywhere}
+
 \subsubsection{Association Table} \label{sec:association}
 
 Noting again that cross-matching and multi-survey analysis is a primary motivator for the HATS spatial format, we introduce the HATS association table. 
@@ -537,7 +548,7 @@ Parquet files will also have footers which may contain aggregate statistics abou
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{leaf_files.png}
-\caption{\textcolor{red}{TODO, increase font in the figure } Example file layout of two parquet files of a dataset}
+\caption{Example file layout of two parquet files of a dataset}
 \label{fig:partitionedParquet}
 \end{figure}
 
@@ -582,31 +593,31 @@ Here, we will elaborate on several ways in which this format can be efficiently 
 
 \subsection{Parquet Storage}\label{sec:parquetPerformance}
 Firstly, we emphasize the need to use the Parquet column filtering. 
-This is a standard practice in SQL-like workflows where a user requests only the columns they need, but it is less common in Python-like workflows. 
+This is a standard practice in SQL-like workflows where users request only the necessary columns, but it is less common in Python-like workflows. 
 Loading into memory the columns that a user needs for scientific analysis, usually a couple out of tens or hundreds available, significantly reduced the computational requirements for the analysis.  \par 
-Parquet files can also be split into so-called rowgroups. This is the splitting of Parquet into chunks with a fixed number of rows. 
+We can also split Parquet files into so-called rowgroups, splitting Parquet into chunks with a fixed number of rows. 
 Parquet readers can skip over entire row groups if they don't contain relevant data. 
-This can significantly increase the efficiency of particular queries, especially if the rowgroups are selected in a particular way that is appropriate for the scientific case. 
+This can significantly increase the efficiency of particular queries, especially if the rowgroups are selected in a specific way appropriate for the scientific case. 
 For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
-This is because we don't have to load the entire Parquet file into memory, only this tiny rowgroup part, in order to retrieve the needed row from the user. \par 
+Speed up happens because we don't have to load the entire Parquet file into memory, only this tiny rowgroup part, to retrieve the needed row from the user. \par 
 
 \subsection{HTTP Services}
 The fact that the data can be stored on the hard drive and served at rest to the users simplifies the cost structure for catalog providers. 
-Still, a user operating on the dataset, even if they are doing aggressive filtering and requesting a minimal number of rows at the end, will have to effectively transfer a large amount of data over to their client, where the filtering is done. 
-These limitations could become prohibitive if this is done over a network or with limited bandwidth. 
+Still, a user operating on the dataset, even if they are doing aggressive filtering and requesting a minimal number of rows at the end, will have to effectively transfer a large amount of data to their client, where the filtering is done. 
+These limitations could become prohibitive if done over a network or with limited bandwidth. 
 To alleviate that problem, it is possible to implement a server-side query in which the filtering operations are done server-side, and only the final dataset is sent to a user. 
-Of course, this requires computational resources on the provider's side, but operate on a single file and will benefit from parquet storage optimizations from Section~{sec:parquetPerformance}
+Of course, this requires computational resources on the provider's side, but operates on a single file and will benefit from parquet storage optimizations from Section~{sec:parquetPerformance}
 
 \subsection{Cross-matching}
 Finally, we want to highlight the exceptional performance possible when cross-matching HATS catalogs. 
 Due to its spatial sharding, the cross-matching approach implemented in LSDB is competitive with the existing tools and is more efficient for extensive catalogs, starting with roughly one million rows. 
 Because of the granular spatial structure, the user can increase the number of parallel computation units. 
 These will linearly decrease the time needed as long as the number of workers is smaller than the number of partitions in the datasets and there is sufficient I/O speed. 
-In general, for typical cases of large catalogs (billion+ rows), cross-matching on a single core is around 5 to 15\% slower than the pure I/O speed. 
+For typical cases of large catalogs (billion+ rows), cross-matching on a single core is around 5 to 15\% slower than the pure I/O speed. 
 As discussed above, selecting only specific columns and parallelizing the work can drastically improve performance.   
 
 \section{Integration with Existing VO Standards}
-HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps). \par
+HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix \citep{gorski:healpix} and MOC (Multi-Order Coverage maps) \citep{ivoa:MOC}. \par
 \textcolor{red}{TODO, NEED HELP, especially with MOC: explain more how is it compatible}. \par 
 The HATS format can be made to be compatible with the TAP query by implementing a translation layer between the TAP query language. 
 We have explored some initial implementation of such functionality, but the implementation details will always depend on the language used to handle the Parquet files. \par
@@ -616,7 +627,38 @@ We are closely following the development of the VOParquet format and aim to impl
 \section{Changes from Previous Versions}
 No previous versions yet.
 
-\bibliography{ivoatex/ivoabib,ivoatex/docrepo}
+% \bibliography{ivoatex/ivoabib,ivoatex/docrepo}
+\begin{thebibliography}{}
 
+\harvarditem{Bradner}{1997}{std:RFC2119}
+Bradner, S.  \harvardyearleft 1997\harvardyearright , `Key words for use in
+  {RFCs} to indicate requirement levels', RFC 2119.
+\newblock \url{http://www.ietf.org/rfc/rfc2119.txt}.
+
+\harvarditem{Masci et al.}{2019}{ztf:Masci2019}
+Masci, F.~J., et al. \harvardyearleft 2019\harvardyearright,
+`The Zwicky Transient Facility: Data Processing, Products, and Archive',
+PASP, 131, 018003. \url{https://ui.adsabs.harvard.edu/abs/2019PASP..131a8003M}.
+
+\harvarditem{Bellm et al.}{2019}{ztf:Bellm2019}
+Bellm, E.~C., et al. \harvardyearleft 2019\harvardyearright,
+`The Zwicky Transient Facility: System Overview, Performance, and First Results',
+PASP, 131, 018002. \url{https://ui.adsabs.harvard.edu/abs/2019PASP..131a8002B}.
+
+\harvarditem{Fernique et al.}{2019}{ivoa:MOC}
+Fernique, P., Boch, T., Donaldson, T., Durand, D., O'Mullane, W., Reinecke, M., \& Taylor, M.  
+\harvardyearleft 2019\harvardyearright,  
+*MOC - HEALPix Multi-Order Coverage map Version 1.1*,  
+IVOA Recommendation 07 October 2019.  
+\url{https://ui.adsabs.harvard.edu/abs/2019ivoa.spec.1007F}.
+
+\harvarditem{G{\'o}rski et al.}{2005}{gorski:healpix}
+G{\'o}rski, K.~M., Hivon, E., Banday, A.~J., Wandelt, B.~D., Hansen, F.~K., Reinecke, M., \& Bartelmann, M.  
+\harvardyearleft 2005\harvardyearright,  
+`HEALPix: A Framework for High-Resolution Discretization and Fast Analysis of Data Distributed on the Sphere',  
+*Astrophysical Journal*, **622**, 759–771.  
+\url{https://ui.adsabs.harvard.edu/abs/2005ApJ...622..759G}.
+
+\end{thebibliography}
 \end{document}
 
