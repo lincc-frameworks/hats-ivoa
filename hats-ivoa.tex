@@ -211,7 +211,7 @@ In areas with sparse data, larger tiles minimize storage overhead, whereas high-
 
 The data is stored at a given level until the dataset size crosses a predetermined threshold. 
 This threshold can be, most commonly, the number of rows or the size of the data on the disk. 
-As we add the data, t the point that the threshold is reached the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
+As we add the data, at the point that the threshold is reached, the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
 This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold. We show an example of the result of this procedure in Figure \ref{fig:order}.
 
 \begin{figure}
@@ -243,7 +243,8 @@ We refer to these as supplemental tables or supplemental catalogs, and these off
 \subsubsection{Margin Cache} \label{sec:margin}
 
 One of primary motivations for HATS is rapid cross-matching of different surveys, or different data sources within the same survey. 
-The power of cross-matching in HATS is that each computation unit gets smaller spatially-connected parts from each dataset and works on them one part at the time. \par 
+The power of cross-matching in HATS is that each computation unit gets small spatially-connected parts from each dataset and works on them one part at a time,
+with the amount of data being roughly equal in each part, for best efficiency.\par 
 
 However, this introduces a limitation: at the boundaries of a divided section, some data points that should be cross-matched will be missed because they are present just across the border in neighboring partitions instead.
 This has a number of causes (observational error, non-point source positions, proper motion, etc), but should be handled by applications to ensure that you're finding an appropriate counterpart in cross-match.\par
@@ -408,8 +409,8 @@ hats\_margin\_threshold &For margin tables, the threshold used for finding point
 hats\_max\_rows &At catalog creation time, the maximum number of rows per file before breaking into 4 new files at higher order. \\
 hats\_nrows &Number of rows of the HATS catalog. Format: positive integer \\
 hats\_order &Deepest HATS order. Format: positive integer \\
-hats\_primary\_table\_url &For supplemental tables , there will be a primary table with original survey data. \\
-hats\_progenitor\_url &URL to an associated progenitor HATS \\
+hats\_primary\_table\_url &For supplemental tables, there will be a primary table with original survey data. Format: URL\\
+hats\_progenitor\_url &URL to an associated progenitor HATS catalog. Format: URL \\
 hats\_release\_date &Last HATS update date - Format: ISO 8601 => YYYY-mm-ddTHH:MMZ \\
 hats\_service\_url &HATS access url. Format: URL \\
 hats\_status &HATS status. Format: list of space-delimited words ("private" or "public"), ("main", "mirror", or "partial"), ("clonable", "unclonable" or "clonableOnce"). Default : public main clonableOnce \\
@@ -593,7 +594,7 @@ Here, we will elaborate on several ways in which this format can be efficiently 
 \subsection{Parquet Storage}\label{sec:parquetPerformance}
 Firstly, we emphasize the need to use the Parquet column filtering. 
 This is a standard practice in SQL-like workflows where users request only the necessary columns, but it is less common in Python-like workflows. 
-Loading into memory the columns that a user needs for scientific analysis, usually a couple out of tens or hundreds available, significantly reduced the computational requirements for the analysis.  \par 
+Loading into memory only the columns that a user needs for scientific analysis, typically just a few out of the tens or hundreds available, significantly reduced the computational requirements for the analysis.  \par 
 We can also split Parquet files into so-called rowgroups, splitting Parquet into chunks with a fixed number of rows. 
 Parquet readers can skip over entire row groups if they don't contain relevant data. 
 This is especially effective when row groups are designed to match the access patterns of a specific scientific use case. 
