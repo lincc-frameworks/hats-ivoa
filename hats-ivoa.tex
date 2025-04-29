@@ -47,6 +47,7 @@
 \author[https://www.ivoa.net/authors/malanchev]{Konstantin Malanchev}
 \author[https://www.ivoa.net/authors/mcguire]{Sean McGuire}
 \author[https://www.ivoa.net/authors/lynn]{Olivia Lynn}
+\author[https://www.ivoa.net/authors/raen]{Troy Raen}
 \author[https://www.ivoa.net/authors/juric]{Mario Juric}
 
 \editor{editor here}
@@ -54,7 +55,6 @@
 \previousversion{This is the first public release}
 
 \begin{document}
-\textcolor{red}{KOSTYA NOTE - Should we add people from the HATS working group? Those who contributed code to HATS/LSDB?}
 \begin{abstract}
 The increasing complexity and volume of astronomical datasets necessitate efficient spatial indexing and query strategies within the Virtual Observatory (VO). 
 The Hierarchical Adaptive Tiling Scheme (HATS) is a framework designed to facilitate scalable queries, filtering operations, and efficient data retrieval across large astronomical surveys. 
@@ -63,7 +63,6 @@ HATS provides a flexible, hierarchical approach that balances computational effi
 
 This document describes the structure, implementation, and best practices for integrating HATS within the VO ecosystem, ensuring interoperability and performance optimization for distributed astronomical datasets. We discuss how HATS enhances existing indexing schemes, its role in federated data access, and how it enables powerful applications for large-scale survey science and efficient cross-matching of astronomical catalogs. \par 
 The reference implementation of HATS can be found at \url{https://github.com/astronomy-commons/hats}. 
-\textcolor{red}{KOSTYA NOTE - We don't give a use-case, for example, we can say that it is to enable fast querying of >~1e6 rows}
 
 \end{abstract}
 
@@ -95,12 +94,10 @@ infrastructure that enable VO applications.
 The rapid expansion of astronomical data from large survey facilities like Vera C. Rubin Observatory, Euclid, and Roman Space Telescope necessitates innovative solutions for spatial indexing and efficient data retrieval. 
 These surveys generate vast amounts of high-resolution imaging and time-domain data, requiring efficient methods for organizing, querying, and cross-matching data across multiple archives. 
 Traditional approaches to spatial indexing, such as hierarchical pixelization (e.g., HEALPix) or static tiling schemes, often exhibit inefficiencies when handling uneven sky densities.
-\textcolor{red}{KOSTYA NOTE - "dynamic" may be misunderstood, as the partitioning is not happening on-the-fly}
 
 The Hierarchical Adaptive Tiling Scheme (HATS) is a novel approach designed to optimize spatial data partitioning while maintaining flexibility in accommodating varying data densities. 
 Unlike fixed spatial partitioning methods, HATS adaptively adjusts tile sizes based on local data characteristics, ensuring an optimal balance between resolution, query efficiency, and storage management. 
-By leveraging a hierarchical structure, HATS allows users to perform efficient spatial queries while preserving high precision in regions of interest.
-\textcolor{red}{KOSTYA NOTE - Readers may not understand that "multi-resolution" is about healpix order}
+By leveraging a hierarchical structure, HATS enables efficient spatial queries, allowing users to quickly focus on regions with fine-grained detail when needed, while maintaining scalability across large areas.
 
 This document aims to define best practices for implementing and utilizing this tiling scheme within the Virtual Observatory framework. 
 This document outlines the principles behind HATS, describes its data model, and provides recommendations. 
@@ -272,8 +269,7 @@ The margin data can be loaded alongside the primary catalog partition data durin
 The margin catalog can be overloaded to also provide a cache of related objects that are not within the primary data partition for other scientific use cases.
 
 \subsubsection{Index Table} \label{sec:index}
-\textcolor{red}{KOSTYA NOTE - We never specify the coordinate system in the doc}
-\textcolor{red}{MELISSA NOTE TO KOSTYA NOTE - YES - that seems like something we should discuss, since make a lot of assumptions about using the same coordinate system in all catalogs, for cross-matching purposes}
+
 HATS catalogs are partitioned spatially, on right ascension and declination. 
 This makes finding objects in a particular area of the sky very straightforward. 
 However, one may occasionally only know the object by the survey-assigned identifier, and to find the row, would have to perform a full scan of all partitions. \par
@@ -606,17 +602,14 @@ Here, we will elaborate on several ways in which this format can be efficiently 
 
 \subsection{Parquet Storage}\label{sec:parquetPerformance}
 Firstly, we emphasize the need to use the Parquet column filtering. 
-\textcolor{red}{KOSTYA NOTE - I don't understand the sentence about the standard practice and SQL/Python-like}
-\textcolor{red}{MELISSA NOTE TO KOSTYA NOTE - I kind of agree, and don't know how to rephrase}
-This is a standard practice in SQL-like workflows where users request only the necessary columns, but it is less common in Python-like workflows. 
 Loading into memory only the columns that a user needs for scientific analysis, typically just a few out of the tens or hundreds available, significantly reduces the computational requirements for the analysis.  \par 
 
 We can also split Parquet files into so-called row groups, splitting Parquet into chunks with a fixed number of rows. 
 Parquet readers can skip over entire row groups if they don't contain relevant data, using the Parquet row group footer's min and max values for hints. 
 This is especially effective when row groups are designed to match the access patterns of a specific scientific use case. 
-For instance, if row groups are made to be small and they are sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
-This speed-up happens because we don't have to load the entire Parquet file into memory, but only the smaller row group, to retrieve the needed row with the required identification number.\par 
-\textcolor{red}{KOSTYA NOTE - We never talk about how Parquet is good for block storage and network access}
+For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
+Speed-up happens because we don't have to load the entire Parquet file into memory, but only the smaller rowgroup, to retrieve the needed row with the required identification number.\par 
+
 
 \subsection{HTTP Services}
 The fact that the data can be stored on the hard drive and served at rest to the users simplifies the cost structure for catalog providers. 
