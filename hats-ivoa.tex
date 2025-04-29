@@ -224,9 +224,11 @@ This process continues until all of the data is stored at the appropriate level 
 
 
 \subsubsection{Structure of Data Files} \label{sec:parquet}
-The astronomical data is stored in Parquet format \footnote{\href{https://parquet.apache.org}{https://parquet.apache.org}}.
-Parquet is a binary columnar storage file format optimized for efficient data compression and retrieval, especially well-suited for analytical workloads. 
-It is ideal for storing large amounts of astronomical tabular data because it allows fast access to specific columns without reading the entire dataset, significantly reducing I/O and improving performance. \par
+The astronomical data is stored in Parquet format\footnote{\href{https://parquet.apache.org}{https://parquet.apache.org}}.
+Parquet is a binary, columnar storage file format optimized for efficient data compression and retrieval.
+It is ideal for storing large amounts of astronomical tabular data because it enables fast access to specific columns without reading the entire dataset, significantly reducing I/O and improving performance.
+Due to its widespread integration with popular processing frameworks such as Dask, Apache Spark, Hadoop, and cloud-native query engines, Parquet has become the de facto standard for analytical workloads in big data ecosystems.
+It is also widely used in cloud environments, such as AWS S3 or Google Cloud Storage, and has libraries implemented for various programming languages, making it easy to work with Parquet files in different environments. \par
 
 The HATS format RECOMMENDS that the first column of the dataset is the \texttt{\_healpix\_29} index column.  
 \texttt{\_healpix\_29} stores the crucial spatial information about the position in the sky for each row, and it is not unique.
@@ -609,7 +611,6 @@ Parquet readers can skip over entire row groups if they don't contain relevant d
 This is especially effective when row groups are designed to match the access patterns of a specific scientific use case. 
 For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
 Speed-up happens because we don't have to load the entire Parquet file into memory, but only the smaller rowgroup, to retrieve the needed row with the required identification number.\par 
-
 
 \subsection{HTTP Services}
 The fact that the data can be stored on the hard drive and served at rest to the users simplifies the cost structure for catalog providers. 
