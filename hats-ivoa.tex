@@ -520,11 +520,11 @@ This file is OPTIONAL and RECOMMENDED for object catalogs.
 
 \subsubsection{data\_thumbnail.parquet} 
 This is a small dataset aimed to help users to understand and use the data. 
-It is created by taking the first row from each data leaf, so the number of rows in this Parquet file is the same as the number of data leaves altogether. \par
+It is created by taking the first row from each data partition, so the number of rows in this Parquet file is the same as the number of data partitions altogether. \par
 
-This file allows a user to get a quick overview of the whole dataset in the same format as the whole dataset. 
-Given how it is sampled, it will cover the entire width of the dataset and give a user an accurate overview of the properties of the dataset. 
-In such a way, it is superior and more convenient than pointing a user to take out a subset of a single Parquet data leaf for testing. 
+This file gives the user a quick overview of the whole dataset.
+Given how it is sampled, it will cover the entire width of the dataset, and give a reasonably accurate overview of the properties of the dataset. 
+It is thus both more convenient than, and superior to, directing a user to a subset of any single Parquet data partition for the same purposes.
 
 This file is OPTIONAL and RECOMMENDED for object catalogs.
 
