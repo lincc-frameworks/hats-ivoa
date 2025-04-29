@@ -54,6 +54,7 @@
 \previousversion{This is the first public release}
 
 \begin{document}
+\textcolor{red}{KOSTYA NOTE - Should we add people from the HATS working group? Those who contributed code to HATS/LSDB?}
 \begin{abstract}
 The increasing complexity and volume of astronomical datasets necessitate efficient spatial indexing and query strategies within the Virtual Observatory (VO). 
 The Hierarchical Adaptive Tiling Scheme (HATS) is a framework designed to facilitate scalable queries, filtering operations, and efficient data retrieval across large astronomical surveys. 
@@ -62,7 +63,7 @@ HATS provides a flexible, hierarchical approach that balances computational effi
 
 This document describes the structure, implementation, and best practices for integrating HATS within the VO ecosystem, ensuring interoperability and performance optimization for distributed astronomical datasets. We discuss how HATS enhances existing indexing schemes, its role in federated data access, and how it enables powerful applications for large-scale survey science and efficient cross-matching of astronomical catalogs. \par 
 The reference implementation of HATS can be found at \url{https://github.com/astronomy-commons/hats}. 
-
+\textcolor{red}{KOSTYA NOTE - We don't give a use-case, for example, we can say that it is to enable fast querying of >~1e6 rows}
 
 \end{abstract}
 
@@ -93,11 +94,13 @@ infrastructure that enable VO applications.
 \section{Introduction}
 The rapid expansion of astronomical data from large survey facilities like Vera C. Rubin Observatory, Euclid, and Roman Space Telescope necessitates innovative solutions for spatial indexing and efficient data retrieval. 
 These surveys generate vast amounts of high-resolution imaging and time-domain data, requiring efficient methods for organizing, querying, and cross-matching data across multiple archives. 
-Traditional approaches to spatial indexing, such as hierarchical pixelization (e.g., HEALPix) or static tiling schemes, often exhibit inefficiencies when handling dynamic, multi-resolution datasets.
+Traditional approaches to spatial indexing, such as hierarchical pixelization (e.g., HEALPix) or static tiling schemes, often exhibit inefficiencies when handling uneven sky densities.
+\textcolor{red}{KOSTYA NOTE - "dynamic" may be misunderstood, as the partitioning is not happening on-the-fly}
 
 The Hierarchical Adaptive Tiling Scheme (HATS) is a novel approach designed to optimize spatial data partitioning while maintaining flexibility in accommodating varying data densities. 
-Unlike fixed spatial partitioning methods, HATS dynamically adjusts tile sizes based on local data characteristics, ensuring an optimal balance between resolution, query efficiency, and storage management. 
-By leveraging a hierarchical structure, HATS allows users to perform efficient multi-resolution queries while preserving high precision in regions of interest.
+Unlike fixed spatial partitioning methods, HATS adaptively adjusts tile sizes based on local data characteristics, ensuring an optimal balance between resolution, query efficiency, and storage management. 
+By leveraging a hierarchical structure, HATS allows users to perform efficient spatial queries while preserving high precision in regions of interest.
+\textcolor{red}{KOSTYA NOTE - Readers may not understand that "multi-resolution" is about healpix order}
 
 This document aims to define best practices for implementing and utilizing this tiling scheme within the Virtual Observatory framework. 
 This document outlines the principles behind HATS, describes its data model, and provides recommendations. 
@@ -108,19 +111,19 @@ The primary motivation behind HATS is to address the following challenges in ast
 \begin{itemize}
     \item \textbf{Scalability:} Modern astronomical surveys generate petabytes of spatially distributed data, requiring an indexing scheme that scales efficiently with dataset size.
     HATS provides such an indexing scheme, and creates files whose properties and size are well-suited to parallel operations.
-    \item \textbf{Adaptive Resolution:} Fixed grid-based partitioning often leads to inefficient storage and query execution, particularly in non-uniformly distributed datasets. 
-    HATS dynamically adjusts tile sizes to accommodate varying data densities.
+    \item \textbf{Adaptive Spatial Resolution:} Fixed grid-based partitioning often leads to inefficient storage and query execution, particularly in non-uniformly distributed datasets. 
+    HATS adaptively adjusts tile sizes to accommodate varying data densities.
     \item \textbf{Efficient Query Execution:} Spatial queries such as nearest-neighbor searches and cross-matching must be executed efficiently across distributed data repositories. 
-    HATS enables rapid indexing and retrieval of relevant data subsets.
+    HATS enables rapid indexing and retrieval of relevant data subsets, and provides an balanced partitioning of data for distributed parallel processing.
     \item \textbf{Interoperability:} Astronomical data is collected from diverse instruments and observatories, often using different spatial reference frames. 
-    HATS provides a standardized framework for integrating and harmonizing spatial data across multiple sources.
+    HATS provides a standardized framework for integrating and harmonizing spatial data across multiple repositories.
 \end{itemize}
 
 \section{HATS Design and Implementation}
 
 \subsection{HATS Catalog Directory Structure} \label{sec:catalog}
 
-The HATS framework relies on spatially sharding catalogs of approximately the same size in Parquet files. 
+The HATS framework relies on spatially sharding catalogs into Parquet files of approximately the same size 
 Here, we discuss how this is achieved and additional concepts that make it easier to use this main idea for astronomical research.
 
 The central unit of data storage is the HATS \texttt{catalog}. 
@@ -153,7 +156,8 @@ We will discuss the partitioning and data storage in Sections~\ref{sec:hierarchi
 The other files visible above are various metadata and auxiliary files that are here to enable better and easier handling of the data and we will describe them in Section~\ref{sec:meta}. 
     
 \subsubsection{Hierarchical Directory Structure} \label{sec:hierarchical}
-Focusing now on the dataset's contents, HATS employs a multi-level hierarchy based on HEALPix tiling, where each level represents a progressively finer spatial resolution.
+Focusing now on the dataset's contents, HATS employs a multi-level hierarchy based on HEALPix tiling.
+Each level corresponds to a single HEALPix order and represents a progressively finer spatial resolution.
 
 All tiles of the same HEALPix order are contained within the same prefix \texttt{Norder=k} directory. 
 To avoid directories becoming too large for some file systems, the tiles are then grouped by a \texttt{Dir} subdirectory prefix,
@@ -179,7 +183,7 @@ dataset/
 \end{minipage}
 
 The data is stored in the parquet files (discussed in Section \ref{sec:parquet}), with one or multiple files being possible in the final directory, i.e., in the ultimate data leaf.  \par 
-If there are multiple files, they should be read together, i.e., we consider them to be one single data unit. 
+If there are multiple files representing a single data partition, they should be read together, i.e., we consider them to be one single data unit. 
 In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed, additions of files in existing folders.
 
 Such a directory structure would appear as shown in Listing~\ref{fig:datasetWithDir}.
@@ -206,10 +210,10 @@ dataset/
 \end{minipage} 
 
 \subsubsection{Adaptive Tiling Algorithm} \label{sec:adaptive}
-Unlike static partitioning schemes, HATS dynamically subdivides spatial regions based on data density. 
-In areas with sparse data, larger tiles minimize storage overhead, whereas high-density areas are subdivided into smaller tiles to improve query efficiency. \par
+Unlike static partitioning schemes, HATS adaptively subdivides spatial regions based on data angular density. 
+In areas with sparse data, larger HEALPix tiles minimize storage overhead, whereas high-density areas are subdivided into smaller tiles to improve query efficiency. \par
 
-The data is stored at a given level until the dataset size crosses a predetermined threshold. 
+The data is stored at a given level until the size of the data within the tile crosses a predetermined threshold. 
 This threshold can be, most commonly, the number of rows or the size of the data on the disk. 
 As we add the data, at the point that the threshold is reached, the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
 This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold. We show an example of the result of this procedure in Figure \ref{fig:order}.
@@ -223,14 +227,14 @@ This process continues until all of the data is stored at the appropriate level 
 
 
 \subsubsection{Structure of Data Files} \label{sec:parquet}
-The astronomical data is stored in \texttt{*.parquet} format \footnote{\href{https://parquet.apache.org}{https://parquet.apache.org}}.
-Parquet is a columnar storage file format optimized for efficient data compression and retrieval, especially well-suited for analytical workloads. 
+The astronomical data is stored in Parquet format \footnote{\href{https://parquet.apache.org}{https://parquet.apache.org}}.
+Parquet is a binary columnar storage file format optimized for efficient data compression and retrieval, especially well-suited for analytical workloads. 
 It is ideal for storing large amounts of astronomical tabular data because it allows fast access to specific columns without reading the entire dataset, significantly reducing I/O and improving performance. \par
 
-The HATS format RECOMMENDS that the first column of the dataset is the \texttt{healpix\_29} index column.  
-\texttt{healpix\_29} stores the crucial spatial information about the position in the sky for each row, and it is not unique.
+The HATS format RECOMMENDS that the first column of the dataset is the \texttt{\_healpix\_29} index column.  
+\texttt{\_healpix\_29} stores the crucial spatial information about the position in the sky for each row, and it is not unique.
 This is calculated as the HEALPix order 29 value of the row's right ascension and declination. 
-If two objects occur at the same location (or the data is individual observations of the same sky object), then multiple rows may have the same value for the \texttt{healpix\_29} column.
+If two objects occur at the same location (or the data is individual observations of the same sky object), then multiple rows may have the same value for the \texttt{\_healpix\_29} column.
 The existence of this value speeds up downstream spatial calculations, and is beneficial for spatially-intensive applications.
 
 Additional optional performance considerations for Parquet files is discussed in Section~\ref{sec:parquetPerformance}.
@@ -251,29 +255,36 @@ This has a number of causes (observational error, non-point source positions, pr
 
 One option would be to load all neighboring partitions when performing a cross-match. 
 However, this would require loading much unnecessary data, as only a small sliver around the edge of a partition is a candidate for counterparts in neighboring partitions. 
-Figure~\ref{fig:margin} shows some example data points that are near to a HEALPix pixel boundary, and should be included in a cross-match calculation.
+Figure~\ref{fig:margin} shows some example data points that are near to a HEALPix tile boundary, and should be included in a cross-match calculation.
 
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{margin-pix.png}
-\caption{Example of margin contents. Green points are present in the primary catalog partition, the blue line is the HEALPix pixel boundary, and yellow points are points in the neighboring pixel that are within 10 arcseconds of the boundary.}
+\caption{Example of margin contents. Green points are present in the primary catalog partition, the blue line is the HEALPix pixel boundary, and yellow points are points in the neighboring tile that are within 10 arcseconds of the boundary.}
 \label{fig:margin}
 \end{figure}
 
 We address this through the creation of a margin cache.
 This is an additional catalog that contains points in a limited angular threshold around the primary catalog partition.
+The margin catalog MUST contain all points within the indicated angular threshold from the tile boundary, but MAY contain additional points, either for simplicity of spatial calculations, or to provide additional points of interest.\par
+
 The margin data can be loaded alongside the primary catalog partition data during a cross-match operation to account for any positional issues that may arise around the boundaries of the partition's HEALPix pixel.
+The margin catalog can be overloaded to also provide a cache of related objects that are not within the primary data partition for other scientific use cases.
 
 \subsubsection{Index Table} \label{sec:index}
-
+\textcolor{red}{KOSTYA NOTE - We never specify the coordinate system in the doc}
+\textcolor{red}{MELISSA NOTE TO KOSTYA NOTE - YES - that seems like something we should discuss, since make a lot of assumptions about using the same coordinate system in all catalogs, for cross-matching purposes}
 HATS catalogs are partitioned spatially, on right ascension and declination. 
 This makes finding objects in a particular area of the sky very straightforward. 
-However, you may occasionally only know the object by the survey-assigned identifier, and to find the row, you would have to perform a full scan of all partitions. \par
+However, one may occasionally only know the object by the survey-assigned identifier, and to find the row, would have to perform a full scan of all partitions. \par
 
 HATS supports creating additional secondary index tables. 
-In their creation, you perform this full scan and shuffle and write out a simple mapping from the unique identifier to where it can be found in the sky.
-In this way, you can query the index catalog for the HEALPix pixel where the value can be found, and then only need to load the primary catalog partition for the corresponding HEALPix pixel. 
-This greatly speeds up and facilitates the query, as we now only have to load a single pixel instead of going through the whole catalog.
+To create index tables, we perform a full scan over all of the data, sort by the desired column, and write out a simple mapping from the unique identifier to where it can be found in the sky.
+Sorting over such a large dataset can be expensive, and it's preferable to perform this operation once and store the results. \par
+
+This mirrors the relational database notion of a lookup table, where you can lookup the spatial parameters of a non-spatial property.
+The user can query the index catalog for the HEALPix tile where the value can be found, and then only need to load the primary catalog partition for the corresponding HEALPix tile. 
+This greatly speeds up and facilitates the query, as we now only have to load a single tile instead of going through the whole catalog.
 These are general secondary indexes, and can be built on any column, not just the survey-assigned identifier.
 
 \subsubsection{Catalog Collection} \label{sec:collection}
@@ -331,7 +342,7 @@ HATS implementations utilize auxiliary files and metadata files to store relevan
     \item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
 \end{itemize}
     
-Note that collection.properties is only required if you are creating  \texttt{catalog} collection for your dataset. \par 
+Note that collection.properties is only required if creating a \texttt{catalog} collection for your dataset. \par 
 We will now go over these files and explain their function, format and their contents. 
     
 \subsubsection{properties} 
@@ -395,7 +406,7 @@ hats\_col\_assn\_primary\_assn &For association tables, column name in the assoc
 hats\_col\_dec &Column name of the dec coordinate. Used for partitioning and default cross-matching. \\
 hats\_col\_ra &Column name of the ra coordinate. Used for partitioning and default cross-matching. \\
 hats\_cols\_default &Which columns should be read from parquet files, when user doesn't otherwise specify. Useful for wide tables. Format: space-delimited column names \\
-hats\_cols\_sort &At catalog creation time, the columns used to sort the data, in addition to \texttt{healpix\_29} column. \\
+hats\_cols\_sort &At catalog creation time, the columns used to sort the data, in addition to \texttt{\_healpix\_29} column. \\
 hats\_cols\_survey\_id &The primary key used in the original survey data. May be multiple columns if the survey uses a composite key (e.g. object ID and MJD for detections) \\
 hats\_coordinate\_epoch &For the default ra and dec (hats\_col\_ra, hats\_col\_dec), the measurement epoch \\
 hats\_copyright &Copyright mention associated to the HATS - Format: free text \\
@@ -478,12 +489,12 @@ HATS readers can quickly read this file to understand the full scope of the cata
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example \texttt{partition\_info.csv} file contents, label=fig:examplePartitionInfoCsv]    
-Norder,	Npix
-3,      530
-4,      637
-4,      958
-4,      1003
-4,      2147
+Norder,Npix
+3,530
+4,637
+4,958
+4,1003
+4,2147
 \end{lstlisting}
 \end{minipage}
 
@@ -500,12 +511,12 @@ This file is not used for table types that are NOT association tables.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example \texttt{partition\_join\_info.csv} file contents, label=fig:examplePartitionJoinInfoCsv]    
-Norder,	Npix,   join_Norder,    join_Npix
-3,      530,    3,              517
-3,      530,    4,              2120
-3,      530,    4,              2121
-3,      530,    4,              2122
-4,      637,    4,              637
+Norder,Npix,join_Norder,join_Npix
+3,530,3,517
+3,530,4,2120
+3,530,4,2121
+3,530,4,2122
+4,637,4,637
 \end{lstlisting}
 \end{minipage}
 
@@ -520,7 +531,9 @@ This file is OPTIONAL and RECOMMENDED for object catalogs.
 
 \subsubsection{data\_thumbnail.parquet} 
 This is a small dataset aimed to help users to understand and use the data. 
-It is created by taking the first row from each data partition, so the number of rows in this Parquet file is the same as the number of data partitions altogether. \par
+It MUST have the same overall data schema as the data partitions themselves.
+It MUST not be larger than the threshold used to split data partitions.
+The data it contains should represent the diversity of the catalog well. \par
 
 This file gives the user a quick overview of the whole dataset.
 Given how it is sampled, it will cover the entire width of the dataset, and give a reasonably accurate overview of the properties of the dataset. 
@@ -534,7 +547,7 @@ Many parquet reading frameworks support and recommend additional dataset-level m
 \begin{itemize}
     \item \texttt{\_common\_metadata} which contains the full schema of the dataset, and can be thought of as extensive header information. 
     This file will know all of the columns and their types, as well as any top-level key-value metadata associated with the full parquet dataset.
-    \item \texttt{\_metadata} contains per-partition information, chiefly the footer information of all constituent parquet files which contain aggregate statistics.
+    \item \texttt{\_metadata} contains per-partition information, chiefly the Parquet footer information of all constituent parquet files which contain aggregate statistics.
 \end{itemize}
 
 Both files are OPTIONAL and RECOMMENDED for all catalogs.
@@ -593,13 +606,17 @@ Here, we will elaborate on several ways in which this format can be efficiently 
 
 \subsection{Parquet Storage}\label{sec:parquetPerformance}
 Firstly, we emphasize the need to use the Parquet column filtering. 
+\textcolor{red}{KOSTYA NOTE - I don't understand the sentence about the standard practice and SQL/Python-like}
+\textcolor{red}{MELISSA NOTE TO KOSTYA NOTE - I kind of agree, and don't know how to rephrase}
 This is a standard practice in SQL-like workflows where users request only the necessary columns, but it is less common in Python-like workflows. 
 Loading into memory only the columns that a user needs for scientific analysis, typically just a few out of the tens or hundreds available, significantly reduces the computational requirements for the analysis.  \par 
+
 We can also split Parquet files into so-called row groups, splitting Parquet into chunks with a fixed number of rows. 
-Parquet readers can skip over entire row groups if they don't contain relevant data. 
+Parquet readers can skip over entire row groups if they don't contain relevant data, using the Parquet row group footer's min and max values for hints. 
 This is especially effective when row groups are designed to match the access patterns of a specific scientific use case. 
 For instance, if row groups are made to be small and they are sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
 This speed-up happens because we don't have to load the entire Parquet file into memory, but only the smaller row group, to retrieve the needed row with the required identification number.\par 
+\textcolor{red}{KOSTYA NOTE - We never talk about how Parquet is good for block storage and network access}
 
 \subsection{HTTP Services}
 The fact that the data can be stored on the hard drive and served at rest to the users simplifies the cost structure for catalog providers. 
