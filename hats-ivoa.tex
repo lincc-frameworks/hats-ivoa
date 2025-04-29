@@ -68,7 +68,7 @@ The reference implementation of HATS can be found at \url{https://github.com/ast
 
 \section*{Acknowledgments}
 The authors thank the IVOA Applications Working Group and various contributors from the astronomical community for their feedback and discussions that shaped this standard. 
-We acknowledge the key collaborations with Space Telescope Science Institute (STScI) and IPAC, whose expertise and contributions have been invaluable in refining the HATS framework. 
+We acknowledge the key collaborations with the Space Telescope Science Institute (STScI) and IPAC, at Caltech, whose expertise and contributions have been invaluable in refining the HATS framework. 
 Additionally, we extend our gratitude to  the Strasbourg astronomical Data Center (CDS) for their assistance in metadata structuring and interoperability support. 
 This work has also benefited from insights provided by the S-Plus survey, Linea, European Space Agency, and Canadian Astronomy Data Center (CADC), whose contributions have helped enhance the applicability and robustness of HATS in large-scale astronomical data analysis. \par
 
@@ -107,7 +107,7 @@ Additionally, we discuss how HATS can facilitate efficient cross-matching of ast
 The primary motivation behind HATS is to address the following challenges in astronomical data management:
 \begin{itemize}
     \item \textbf{Scalability:} Modern astronomical surveys generate petabytes of spatially distributed data, requiring an indexing scheme that scales efficiently with dataset size.
-    HATS provides such an indexing scheme, and creates files that have both properties and size that is well-suited to parallel operations.
+    HATS provides such an indexing scheme, and creates files whose properties and size are well-suited to parallel operations.
     \item \textbf{Adaptive Spatial Resolution:} Fixed grid-based partitioning often leads to inefficient storage and query execution, particularly in non-uniformly distributed datasets. 
     HATS adaptively adjusts tile sizes to accommodate varying data densities.
     \item \textbf{Efficient Query Execution:} Spatial queries such as nearest-neighbor searches and cross-matching must be executed efficiently across distributed data repositories. 
@@ -218,7 +218,7 @@ This process continues until all of the data is stored at the appropriate level 
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{order-pix.png}
-\caption{Adaptive tiling for the object catalog of Zwicky Transient Facility, Data Release 14 \citep{ztf:Bellm2019, ztf:Masci2019} To achieve similar number of rows in all parts of the sky, we have to partition galactic region further, resulting in tiles of higher HEALPIX order in galactic plane, and especially near the galactic bulge. }
+\caption{Adaptive tiling for the object catalog of Zwicky Transient Facility, Data Release 14 \citep{ztf:Bellm2019, ztf:Masci2019} To achieve a similar number of rows across the entire sky, we partition the galactic region more finely. This results in tiles of higher HEALPix order in the galactic plane, particularly near the galactic bulge. }
 \label{fig:order}
 \end{figure}
 
@@ -230,7 +230,7 @@ It is ideal for storing large amounts of astronomical tabular data because it al
 
 The HATS format RECOMMENDS that the first column of the dataset is the \texttt{\_healpix\_29} index column.  
 \texttt{\_healpix\_29} stores the crucial spatial information about the position in the sky for each row, and it is not unique.
-This is calculated as the HEALPix order 29 value of the row's right ascension and decliation. 
+This is calculated as the HEALPix order 29 value of the row's right ascension and declination. 
 If two objects occur at the same location (or the data is individual observations of the same sky object), then multiple rows may have the same value for the \texttt{\_healpix\_29} column.
 The existence of this value speeds up downstream spatial calculations, and is beneficial for spatially-intensive applications.
 
@@ -243,12 +243,12 @@ We refer to these as supplemental tables or supplemental catalogs, and these off
 
 \subsubsection{Margin Cache} \label{sec:margin}
 
-One of primary motivations for HATS is rapid cross-matching of different surveys, or different data sources within the same survey. 
+One of the primary motivations for HATS is the rapid cross-matching of different surveys or different data sources within the same survey. 
 The power of cross-matching in HATS is that each computation unit gets small spatially-connected parts from each dataset and works on them one part at a time,
 with the amount of data being roughly equal in each part, for best efficiency.\par 
 
 However, this introduces a limitation: at the boundaries of a divided section, some data points that should be cross-matched will be missed because they are present just across the border in neighboring partitions instead.
-This has a number of causes (observational error, non-point source positions, proper motion, etc), but should be handled by applications to ensure that you're finding an appropriate counterpart in cross-match.\par
+This has a number of causes (observational error, non-point source positions, proper motion, etc), but it should be handled by applications to ensure the appropriate counterpart is found during cross-matching.\par
 
 One option would be to load all neighboring partitions when performing a cross-match. 
 However, this would require loading much unnecessary data, as only a small sliver around the edge of a partition is a candidate for counterparts in neighboring partitions. 
@@ -279,8 +279,8 @@ To create index tables, we perform a full scan over all of the data, sort by the
 Sorting over such a large dataset can be expensive, and it's preferable to perform this operation once and store the results. \par
 
 This mirrors the relational database notion of a lookup table, where you can lookup the spatial parameters of a non-spatial property.
-The user can query the index catalog for the HEALPix tile where the value can be found, and then need only load the primary catalog partition for the corresponding HEALPix tile. 
-This greatly speeds up and facilitates the query, as we now have to load only single tile instead of going through the whole catalog.
+The user can query the index catalog for the HEALPix tile where the value can be found, and then only need to load the primary catalog partition for the corresponding HEALPix tile. 
+This greatly speeds up and facilitates the query, as we now only have to load a single tile instead of going through the whole catalog.
 These are general secondary indexes, and can be built on any column, not just the survey-assigned identifier.
 
 \subsubsection{Catalog Collection} \label{sec:collection}
@@ -604,11 +604,12 @@ Here, we will elaborate on several ways in which this format can be efficiently 
 Firstly, we emphasize the need to use the Parquet column filtering. 
 Loading into memory only the columns that a user needs for scientific analysis, typically just a few out of the tens or hundreds available, significantly reduces the computational requirements for the analysis.  \par 
 
-We can also split Parquet files into so-called rowgroups, splitting Parquet into chunks with a fixed number of rows. 
+We can also split Parquet files into so-called row groups, splitting Parquet into chunks with a fixed number of rows. 
 Parquet readers can skip over entire row groups if they don't contain relevant data, using the Parquet row group footer's min and max values for hints. 
 This is especially effective when row groups are designed to match the access patterns of a specific scientific use case. 
 For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
 Speed-up happens because we don't have to load the entire Parquet file into memory, but only the smaller rowgroup, to retrieve the needed row with the required identification number.\par 
+
 
 \subsection{HTTP Services}
 The fact that the data can be stored on the hard drive and served at rest to the users simplifies the cost structure for catalog providers. 
