@@ -43,10 +43,12 @@
 \author[https://www.ivoa.net/authors/beebe]{Wilson Beebe}
 \author[https://www.ivoa.net/authors/branton]{Doug Branton}
 \author[https://www.ivoa.net/authors/campos]{Sandro Campos}
+\author[https://www.ivoa.net/authors/connolly]{Andrew Connolly}
 \author[https://www.ivoa.net/authors/jones]{Derek Jones}
 \author[https://www.ivoa.net/authors/malanchev]{Konstantin Malanchev}
 \author[https://www.ivoa.net/authors/mcguire]{Sean McGuire}
 \author[https://www.ivoa.net/authors/lynn]{Olivia Lynn}
+\author[https://www.ivoa.net/authors/pineau]{François-Xavier Pineau}
 \author[https://www.ivoa.net/authors/raen]{Troy Raen}
 \author[https://www.ivoa.net/authors/juric]{Mario Juri\'{c}}
 
@@ -180,8 +182,9 @@ dataset/
 \end{minipage}
 
 The data is stored in the Parquet files (discussed in Section \ref{sec:parquet}), with one or multiple files being possible in the final directory, i.e., in the ultimate data leaf.  \par 
-If there are multiple files representing a single data partition, they should be read together, i.e., we consider them to be one single data unit. 
-In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed, additions of files in existing folders.
+If there are multiple files representing a single data partition, they should be read together, i.e., we consider them to be one single data unit. In this way, small updates can be added to already existing  \texttt{catalogs} with simple, correctly placed, additions of files in existing folders. \par 
+With such functionality, it is possible to continuously update catalogs with small updates, e.g., nightly additions, without the need to rebuild the whole catalog. The price is the imbalance between the sizes of the data leaves, and the dataset needs to be rebuilt once this imbalance becomes too large from the standpoint of the catalog provider.
+
 
 Such a directory structure would appear as shown in Listing~\ref{fig:datasetWithDir}.
 
@@ -211,7 +214,7 @@ Unlike static partitioning schemes, HATS adaptively subdivides spatial regions b
 In areas with sparse data, larger HEALPix tiles minimize storage overhead, whereas high-density areas are subdivided into smaller tiles to improve query efficiency. \par
 
 The data is stored at a given level until the size of the data within the tile crosses a predetermined threshold. 
-This threshold can be, most commonly, the number of rows or the size of the data on the disk. 
+This threshold can be, most commonly, the number of rows or the size of the data on disk. 
 As we add the data, at the point that the threshold is reached, the data gets split into four higher-order HEALPix tiles using the spatial information contained in the data. 
 This process continues until all of the data is stored at the appropriate level and no data leaf has more data than the predetermined threshold. We show an example of the result of this procedure in Figure \ref{fig:order}.
 
@@ -232,7 +235,7 @@ It is also widely adopted in cloud environments, such as Amazon S3 or Google Clo
 
 The HATS format RECOMMENDS that the first column of the dataset is the \texttt{\_healpix\_29} index column.  
 \texttt{\_healpix\_29} stores the crucial spatial information about the position in the sky for each row, and it is not unique.
-This is calculated as the HEALPix order 29 value of the row's right ascension and declination. 
+This is calculated as the HEALPix order 29 value of the row's right ascension and declination (HEALPix order 29 correspond to the mean separation between HEALPix pixels of 0.000393 arcsec). 
 If two objects occur at the same location (or the data is individual observations of the same sky object), then multiple rows may have the same value for the \texttt{\_healpix\_29} column.
 The existence of this value speeds up downstream spatial calculations, and is beneficial for spatially-intensive applications.
 
@@ -245,7 +248,7 @@ We refer to these as supplemental tables or supplemental catalogs, and these off
 
 \subsubsection{Margin Cache} \label{sec:margin}
 
-One of the primary motivations for HATS is the rapid cross-matching of different surveys or different data sources within the same survey. 
+An example of a supplementary table is the Margin Cache. One of the primary motivations for HATS is the rapid cross-matching of different surveys or different data sources within the same survey. 
 The power of cross-matching in HATS is that each computation unit gets small spatially-connected parts from each dataset and works on them one part at a time,
 with the amount of data being roughly equal in each part, for best efficiency.\par 
 
@@ -390,14 +393,14 @@ all\_margins &For catalog collections, space-delimited list of subdirectories co
 bib\_reference &Bibliographic reference \\
 bib\_reference\_url &URL to bibliographic reference \\
 creator\_did &Unique ID of the HATS - Format: IVOID - Ex : ivo://CDS/P/2MASS/J \\
-data\_ucd &UCD describing data contents \\
+data\_ucd &UCD describing data contents \citep{ucd1plus2024} \\
 dataproduct\_type &Format: one word ONE OF(object, margin, association, index, ...) \\
 default\_index &For catalog collections, the field of the default index to use for ID searches. \\
 default\_margin &For catalog collections, the subdirectory containing the default margin cache to use for cross-matching \\
 hats\_assn\_join\_table\_url &For association tables, there will be a join table with original survey data (right side of the join) \\
-hats\_assn\_leaf\_files &For association tables, does the table contain leaf files (may optionally only provide a "soft" association between tiles only). \\
+hats\_assn\_leaf\_files &For association tables, does the table contain leaf files (may optionally only provide a "soft" association between tiles). \\
 hats\_builder &Name and version of the tool used for building the HATS. Format: free text -- Example "hats-import v0.6.4" \\
-hats\_col\_assn\_join &For association tables,column name for the joining (right) side of the join within the original table \\
+hats\_col\_assn\_join &For association tables, column name for the joining (right) side of the join within the original table \\
 hats\_col\_assn\_join\_assn &For association tables, column name in the assocation table for the join (right) side of the association table. \\
 hats\_col\_assn\_primary &For association tables, column name for the primary (left) side of the join \\
 hats\_col\_assn\_primary\_assn &For association tables, column name in the association table that matches the primary (left) side of the join \\
@@ -407,14 +410,14 @@ hats\_cols\_default &Which columns should be read from Parquet files, when user 
 hats\_cols\_sort &At catalog creation time, the columns used to sort the data, in addition to \texttt{\_healpix\_29} column. \\
 hats\_cols\_survey\_id &The primary key used in the original survey data. May be multiple columns if the survey uses a composite key (e.g. object ID and MJD for detections) \\
 hats\_coordinate\_epoch &For the default ra and dec (hats\_col\_ra, hats\_col\_dec), the measurement epoch \\
-hats\_copyright &Copyright mention associated to the HATS - Format: free text \\
+hats\_copyright &Copyright mention associated to the dataset or HATS - Format: free text \\
 hats\_creation\_date &HATS first creation date - Format: ISO 8601 => YYYY-mm-ddTHH:MMZ \\
-hats\_creator &Institute or person who built the HATS. Format: free text. Ex : CDS (T.Boch) \\
+hats\_creator &Institute or person who built the HATS. Format: free text. Ex : CDS (T. Boch) \\
 hats\_estsize &HATS size estimation. Format: positive integer. Unit : KB \\
 hats\_frame &Coordinate frame reference. Format: word "equatorial" (ICRS), "galactic", "ecliptic" \\
 hats\_index\_column &For index tables, the column that is indexed over \\
 hats\_index\_extra\_column &For index tables, extra columns that are carried through with the index \\
-hats\_margin\_threshold &For margin tables, the threshold used for finding points within margin. Units: arcs \\
+hats\_margin\_threshold &For margin tables, the threshold used for finding points within margin. Units: arcseconds \\
 hats\_max\_rows &At catalog creation time, the maximum number of rows per file before breaking into 4 new files at higher order. \\
 hats\_nrows &Number of rows of the HATS catalog. Format: positive integer \\
 hats\_order &Deepest HATS order. Format: positive integer \\
@@ -426,10 +429,10 @@ hats\_status &HATS status. Format: list of space-delimited words ("private" or "
 hats\_version &Number of HATS version. Format: 0.1 (corresponds to version of this note) \\
 moc\_sky\_fraction &Fraction of the sky covered by the MOC associated to the HATS. Format: real between 0 and 1 \\
 npix\_suffix & String to indicate file suffix for leaf files. In the typical HATS directory structure, this is \texttt{'.parquet'} or \texttt{'.pq'} because there is a single file in each Npix partition. If using leaf directories, \texttt{'/'}. \\
-obs\_ack &Acknowledgment mention. \\
+obs\_ack &Acknowledgment. \\
 obs\_collection &Short name of original data set. Format: one word. Ex : 2MASS \\
-obs\_copyright &Copyright mention associated to the original data. Format: free text \\
-obs\_copyright\_url &URL to a copyright mention \\
+obs\_copyright &Copyright associated to the original data. Format: free text \\
+obs\_copyright\_url &URL to a copyright  \\
 obs\_description &Data set description. Format: free text, longer free text description of the dataset \\
 obs\_regime &General wavelength. Format: word: "Radio" | "Millimeter" | "Infrared" | "Optical" | "UV" | "EUV" | "X-ray" | "Gamma-ray" \\
 obs\_title &Data set title. Format: free text, one line. Ex : HST F110W observations \\
@@ -554,7 +557,7 @@ To understand the importance of these files, it is helpful to understand the str
 Figure~\ref{fig:partitionedParquet} shows a schematic of two partitioned Parquet files. 
 There is some top-level metadata that may describe the full dataset, as well as column-level key-value metadata.
 The data values are shown in gray, and typically will take up most of the space of the Parquet file. 
-Parquet files will also have footers which may contain aggregate statistics about each column (the min value, max value, count of valid values).
+Parquet files will also have footers which may contain aggregate statistics about each column (min value, max value, count of valid values).
 
 \begin{figure}
 \centering
@@ -613,7 +616,7 @@ For instance, if rowgroups are made to be small and sorted by the identification
 Speed-up happens because we don't have to load the entire Parquet file into memory, but only the smaller rowgroup, to retrieve the needed row with the required identification number.\par 
 
 \subsection{HTTP Services}
-The fact that the data can be stored on the hard drive and served at rest to the users simplifies the cost structure for catalog providers. 
+The fact that the data can be stored on the hard drive and served to the users simplifies the cost structure for catalog providers. 
 However, a user operating on the dataset, even if they are doing aggressive filtering and requesting a minimal number of rows at the end, will still have to transfer a large amount of data to their client, where the filtering is actually conducted. 
 These limitations could become prohibitive if done over a network or with limited bandwidth. 
 To alleviate that problem, it is possible to implement a server-side query in which the filtering operations are done server-side, and only the final dataset is sent to a user. 
@@ -690,7 +693,10 @@ Dowler, P., Rixon, G., \& Tody, D. (2019),
 IVOA Recommendation 2019-10-29, \url{https://www.ivoa.net/documents/TAP/20191029/REC-TAP-1.1-20191029.html}
 
 \harvarditem[Taylor et al.]{Taylor, Pineau, Dubois-Felsmann, and Sipőcz}{2025}{IVOAPARQUET}
-Taylor, M., Pineau, F.-X., Dubois-Felsmann, G., and Sipőcz, B. \emph{Parquet serialization for VO data models}. IVOA Note, 16 January 2025. \url{https://www.ivoa.net/documents/Notes/VOParquet/20250116/index.html}
+Taylor, M., Pineau, F.-X., Dubois-Felsmann, G., and Sipőcz, B. \emph{Parquet in the VO}. IVOA Note, 16 January 2025. \url{https://www.ivoa.net/documents/Notes/VOParquet/20250116/index.html}
+
+\harvarditem[Preite Martinez et al.]{Preite Martinez, Louys, Cecconi, Derrière, Ochsenbein, Erard, and Demleitner}{2024}{ucd1plus2024}
+Preite Martinez, A., Louys, M., Cecconi, B., Derrière, S., Ochsenbein, F., Erard, S., and Demleitner, M. (2024). \emph{UCD1+ Controlled Vocabulary – Updated List of Terms, Version 1.6}. IVOA Endorsed Note, 18 December 2024. IVOA Semantics Working Group. Available at: \url{https://www.ivoa.net/documents/UCD1+/index.html}.
 
 \end{thebibliography}
 \end{document}
