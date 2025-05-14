@@ -281,7 +281,7 @@ However, one may occasionally only know the object by the survey-assigned identi
 
 HATS supports creating additional secondary index tables. 
 To create index tables, we perform a full scan over all of the data, sort by the desired column, and write out a simple mapping from the unique identifier to where it can be found in the sky.
-Sorting over such a large dataset can be expensive, and it's preferable to perform this operation once and store the results. \par
+Sorting over a large dataset can be expensive, and it's preferable to perform this operation once and store the results. \par
 
 This mirrors the relational database notion of a lookup table, where you can lookup the spatial parameters of a non-spatial property.
 The user can query the index catalog for the HEALPix tile where the value can be found, and then only need to load the primary catalog partition for the corresponding HEALPix tile. 
@@ -633,7 +633,7 @@ Loading into memory only the columns that a user needs for scientific analysis, 
 We can also split Parquet files into so-called row groups, splitting Parquet into chunks with a fixed number of rows. 
 Parquet readers can skip over entire row groups if they don't contain relevant data, using the Parquet row group footer's min and max values for hints. 
 This is especially effective when row groups are designed to match the access patterns of a specific scientific use case. 
-For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification can be made much faster. 
+For instance, if rowgroups are made to be small and sorted by the identification number of the survey, the retrieval of the individual rows by survey identification (discussed in Section  \ref{sec:index}) can be made much faster. 
 Speed-up happens because we don't have to load the entire Parquet file into memory, but only the smaller rowgroup, to retrieve the needed row with the required identification number.\par 
 
 \subsection{HTTP Services}
@@ -665,28 +665,28 @@ Figure~\ref{fig:archdiag} shows the role this document plays within the IVOA arc
 
 \subsection{HiPS}
 
-HATS is inspired by the HiPS standard \footnote{\href{https://www.ivoa.net/documents/HiPS/20170519/index.html}{https://www.ivoa.net/documents/HiPS/20170519/index.html}}.
+HATS is inspired by the HiPS standard \citep{ivoa:HIPS}.
 HATS shares similar principles and structure, but serves a different purpose.
 This section briefly tackles the similarities and differences in the approaches, as motivated by the distinct use cases.
 
 Both HATS and HiPS are based on the hierarchical nature of the HEALPix NESTED indexing strategy.
 Both are designed to serve static files in a directory structure, possibly behind a minimalist web server.
 Property files are made of a simple list of key/value pairs. They are easy to parse and to interpret, e.g. as Java properties files.
-HiPS and HATS both rely on well supported -- and even standardized -- HEALPix files: MOC for HiPS, Skymaps for HATS.
+HiPS and HATS both rely on well supported -- and even standardized -- HEALPix files: MOC for HiPS, HEALPix skymap for HATS.
 
-But we can note two main differences.
+Here we discuss the two main differences.
 \begin{enumerate}
   \item First, HiPS is primarily made for spatial visualisation with the idea that "the more you zoom, the more you get".
 The mechanism includes row resolution information, and all HEALPix NESTED layers contain (possibly degraded or partial) information. 
-It means that for a tile at a given depth, a part of its information is available in parent cells.
-Moreover, each tile (including leaf tiles) is quite small (a few tens to a few hundreds of kilobytes).
-On the contrary, HATS is an adaptative grid with information distributed in the HEALPix NESTED tree leaves, and no degraded nor redundant information on nodes.
-Each leaf is quite large (typically a few hundreds of megabytes). 
+This means some information about a tile at a given depth is available in parent cells.
+Moreover, each tile (including leaf tiles) is usually quite small (a few tens to a few hundreds of kilobytes). \par 
+On the contrary, HATS decribes an adaptive grid with information distributed in the HEALPix NESTED tree leaves, without partial or redundant information on nodes.
+Each leaf is usually quite large (typically a few hundreds of megabytes). 
 The main goal is the possibility to perform operations (including row-filtering) on sub-columns, on the whole dataset (often meaning the whole sky).
-   \item Secondly, on one hand, HiPS does not rely on any given external implementation.
+   \item Second, HiPS does not rely on any given external implementation.
 The implementer of a client supporting the HiPS standard has to write its own, moderately complex, code.
-The moderate size of a HEALPix tile is guaranteed by construction in the standard.
-On the other hand, HATS utilizes an industry standard and thus benefits from the external implementation of complex code, as well as ongoing community maintenance of the software.
+The moderate size of a HEALPix tile is guaranteed by construction in the standard. \par
+On the other hand, HATS utilizes existing industry standards and thus benefits from the external implementation of code, as well as ongoing community maintenance of the software.
 The possible reduction of the amount of data retrieved per tile depends on both the request and the implementations (assuming static files).
 \end{enumerate}
 
@@ -713,22 +713,11 @@ At the root level, both:
 \end{itemize}
  
 To sum up, HiPS and HATS both leverage the HEALPix hierarchical nature and translate it into a nested directory structure.
-However, the HiPS standard is directed towards progressive visualization -- meaning that each HEALPix order contains information -- while the
-HATS format optimizes operations on (and between) catalogs -- and thus stores information at the most precise order without redundancy.
+The HiPS standard is designed primarily for progressive visualization, with each HEALPix order containing information. 
+HATS format optimizes operations on (and between) catalogs and stores information at the most precise order without redundancy.
 These two distinct goals justify the need for distinct standards.
 
-\subsection{Compatibility with other standards}
-
-HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps) \citep{ivoa:MOC}. \par
-It builds upon the nested HEALPix tessellation scheme, which provides a hierarchical and uniform way to partition the celestial sphere. This structure is central to HATS: both the storage layout and the spatial indexing are defined in terms of HEALPix pixels.
-The full footprint of the catalog can alternatively be represented by a MOC, as it is a list of HEALPix pixels, at many different HEALPix orders. \par 
-
-The HATS format can be made to be compatible with the TAP query \citep{IVOA:TAP} by implementing a translation layer between the TAP query language. 
-We have explored some initial implementation of such functionality, but the implementation details will always depend on the language used to handle the Parquet files. \par
-
 \subsection{VOParquet}
-
-We are closely following the development of the VOParquet \citep{IVOAPARQUET} format and aim to implement it as a part of HATS catalogs.
 
 The VOParquet format specifies that the VO metadata should be present in the file-level key-value metadata of the parquet file.
 We RECOMMEND that the VOParquet metadata be included in all parquet files, be they ancilliary metadata files (\texttt{\_common\_metadata}, \texttt{\_metadata}, \texttt{data\_thumbnail.parquet}) or data partitions.
@@ -749,6 +738,17 @@ Here we discuss the motivation behind our recommendations, and their consequence
 \end{itemize}
 
 If the \texttt{\_common\_metadata} and \texttt{data\_thumbnail.parquet} files are not present, the VO metadata must be present in ALL data partitions to be considered VOParquet.
+
+
+\subsection{Compatibility with other standards}
+
+HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps) \citep{ivoa:MOC}. \par
+It builds upon the nested HEALPix tessellation scheme, which provides a hierarchical and uniform way to partition the celestial sphere. This structure is central to HATS: both the storage layout and the spatial indexing are defined in terms of HEALPix pixels.
+The full footprint of the catalog can alternatively be represented by a MOC, as it is a list of HEALPix pixels, at many different HEALPix orders. \par 
+
+The HATS format can be made to be compatible with the TAP query \citep{IVOA:TAP} by implementing a translation layer between the TAP query language. 
+We have explored some initial implementation of such functionality, but the implementation details will always depend on the language used to handle the Parquet files. \par
+
 
 \appendix
 \section{Changes from Previous Versions}
@@ -785,6 +785,9 @@ G{\'o}rski, K.~M., Hivon, E., Banday, A.~J., Wandelt, B.~D., Hansen, F.~K., Rein
 `HEALPix: A Framework for High-Resolution Discretization and Fast Analysis of Data Distributed on the Sphere',  
 *Astrophysical Journal*, **622**, 759–771.  
 \url{https://ui.adsabs.harvard.edu/abs/2005ApJ...622..759G}.
+
+\harvarditem{Fernique et al.}{2017}{ivoa:HIPS}
+Fernique, P., Allen, M., Boch, T., Donaldson, T., Durand, D., Ebisawa, K., Michel, L., Salgado, J., \& Stoehr, F. (2017), *HiPS - Hierarchical Progressive Survey Version 1.0*, IVOA Recommendation, 19 May 2017. \url{http://www.ivoa.net/documents/HiPS/20170519/}
 
 \harvarditem{Dowler et al.}{2019}{IVOA:TAP}
 Dowler, P., Rixon, G., \& Tody, D. (2019),
