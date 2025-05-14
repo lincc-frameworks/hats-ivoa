@@ -654,7 +654,7 @@ We have explored some initial implementation of such functionality, but the impl
 We are closely following the development of the VOParquet \citep{IVOAPARQUET} format and aim to implement it as a part of HATS catalogs.
 
 The VOParquet format specifies that the VO metadata should be present in the file-level key-value metadata of the parquet file.
-We RECOMMEND that the VOParquet metadata be included in all parquet files, be they ancilliary metadata files or data partitions.
+We RECOMMEND that the VOParquet metadata be included in all parquet files, be they ancilliary metadata files (\texttt{\_common\_metadata}, \texttt{\_metadata}, \texttt{data\_thumbnail.parquet}) or data partitions.
 If VOParquet metadata exists in one data partition file, it MUST be present in all data partitions.
 
 HATS catalogs MAY contain additional parquet files beyond the data partitions, as discussed in Section~\ref{sec:meta}. 
