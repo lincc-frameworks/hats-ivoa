@@ -558,8 +558,8 @@ Figure~\ref{fig:partitionedParquet} shows a schematic of two partitioned Parquet
 
 The data values are shown in gray, and typically will take up most of the space of the Parquet file. 
 Data is stored and compressed on disk per "row group".
-File 1 contains less data, and it all fits into a single row group.
-File 2 contains more data, and is split on disk into two row groups. 
+File 1 in Figure~\ref{fig:partitionedParquet} contains less data, and it all fits into a single row group.
+File 2 in Figure~\ref{fig:partitionedParquet} contains more data, and is split on disk into two row groups. 
 All of the metadata is stored inside the file footer. There is some file-level metadata that may describe the full dataset, as well as column-level key-value metadata.
 Parquet files MAY also have aggregate statistics about values in each column (minimum value, maximum value, count of valid values).
 
@@ -572,10 +572,10 @@ Parquet files MAY also have aggregate statistics about values in each column (mi
 
 For very large datasets, it is helpful to have a single file that holds the common data schema information in all of the partitioned Parquet files (assuming that they have homogeneous structure).
 This \texttt{\_common\_metadata} file can be much smaller (and so faster to read) than a leaf Parquet file.
-The column statistics, however, will be different for every file, and some files may contain multiple statistics segments if the data inside a single file is very large and requires multiple row groups.
+The column statistics, however, will be different for every file, and some files may contain multiple statistics segments if the data inside a single file is very large and has been divided into multiple row groups.
 These statistics can be concatenated into a single \texttt{\_metadata} file, and can provide valuable insight into the distribution of the data. 
 A clever Parquet reader can use this information to filter queries to only those partitions where certain values are possible.
-See Figure~\ref{fig:parquetMetadata} for the layout of these Parquet metadata files.
+See Figure~\ref{fig:parquetMetadata} for the layout of these two Parquet metadata files.
 
 \begin{figure}
 \centering
