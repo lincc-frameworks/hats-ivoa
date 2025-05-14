@@ -286,8 +286,25 @@ Sorting over such a large dataset can be expensive, and it's preferable to perfo
 This mirrors the relational database notion of a lookup table, where you can lookup the spatial parameters of a non-spatial property.
 The user can query the index catalog for the HEALPix tile where the value can be found, and then only need to load the primary catalog partition for the corresponding HEALPix tile. 
 This greatly speeds up and facilitates the query, as we now only have to load a single tile instead of going through the whole catalog.
-These are general secondary indexes, and can be built on any column, not just the survey-assigned identifier.
+These are general secondary indexes, and can be built on any column, not just the survey-assigned identifier. \par
 
+An index table has a different directory structure, as the data is no longer partitioned by HEALPix pixels, at any order.
+Instead, we have a flat storage of the parquet files, as shown in Listing~\ref{fig:exampleIndexStructure}.
+
+\begin{minipage}{\linewidth}
+  \begin{lstlisting}[caption=Example index table directory contents, label=fig:exampleIndexStructure]
+  id_index/
+  |-- properties
+  +-- dataset/
+      |-- _metadata
+      |-- _common_metadata
+      +-- index/
+          |-- part.0.parquet
+          |-- part.1.parquet
+          |-- . . .
+  \end{lstlisting}
+\end{minipage}
+  
 \subsubsection{Catalog Collection} \label{sec:collection}
 
 Margins and indexes are associated with a single astronomical dataset, and to make this connection clearer and enable friendlier application behavior, tables MAY be grouped together under a single directory called a catalog collection.
