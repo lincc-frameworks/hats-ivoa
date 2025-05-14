@@ -649,7 +649,29 @@ The full footprint of the catalog can alternatively be represented by a MOC, as 
 The HATS format can be made to be compatible with the TAP query \citep{IVOA:TAP} by implementing a translation layer between the TAP query language. 
 We have explored some initial implementation of such functionality, but the implementation details will always depend on the language used to handle the Parquet files. \par
 
+\subsection{VOParquet}
+
 We are closely following the development of the VOParquet \citep{IVOAPARQUET} format and aim to implement it as a part of HATS catalogs.
+
+The VOParquet format specifies that the VO metadata should be present in the file-level key-value metadata of the parquet file.
+We RECOMMEND that the VOParquet metadata be included in all parquet files, be they ancilliary metadata files (\texttt{\_common\_metadata}, \texttt{\_metadata}, \texttt{data\_thumbnail.parquet}) or data partitions.
+If VOParquet metadata exists in one data partition file, it MUST be present in all data partitions.
+
+HATS catalogs MAY contain additional parquet files beyond the data partitions, as discussed in Section~\ref{sec:meta}. 
+The mix of optional files and optional metadata within the files will introduce points of confusion. 
+Here we discuss the motivation behind our recommendations, and their consequences.\par
+
+\begin{itemize}
+  \item[\texttt{\_common\_metadata}] contains the merged schema for all data partition parquet files.
+  If a \texttt{\_common\_metadata} file exists, it WILL have a superset of all key-value metadata present in the data partitions. 
+  It follows that it MUST have the VO metadata present to be considered VOParquet.
+  \item[\texttt{\_metadata}] contains some schema information, but is not required to contain all schema information.
+  It MAY contain the VOParquet metadata, but if it does NOT contain the metadata, the catalog may still be considered valid VOParquet if the metadata is present elsewhere.
+  \item[\texttt{data\_thumbnail.parquet}] MUST have the same overall data schema as the data partitions themselves.
+  It follows that it MUST have the VO metadata present to be considered VOParquet.
+\end{itemize}
+
+If the \texttt{\_common\_metadata} and \texttt{data\_thumbnail.parquet} files are not present, the VO metadata must be present in ALL data partitions to be considered VOParquet.
 
 \appendix
 \section{Changes from Previous Versions}
