@@ -672,7 +672,7 @@ This section briefly tackles the similarities and differences in the approaches,
 Both HATS and HiPS are based on the hierarchical nature of the HEALPix NESTED indexing strategy.
 Both are designed to serve static files in a directory structure, possibly behind a minimalist web server.
 Property files are made of a simple list of key/value pairs. They are easy to parse and to interpret, e.g. as Java properties files.
-HiPS and HATS both rely on well supported -- and even standardized -- HEALPix files: MOC for HiPS, HEALPix skymap for HATS.
+HiPS and HATS both rely on well supported -- and even standardized -- HEALPix files: MOC  \citep{ivoa:MOC} for HiPS , HEALPix skymap for HATS.
 
 Here we discuss the two main differences.
 \begin{enumerate}
@@ -719,7 +719,7 @@ These two distinct goals justify the need for distinct standards.
 
 \subsection{VOParquet}
 
-The VOParquet format specifies that the VO metadata should be present in the file-level key-value metadata of the parquet file.
+The VOParquet format \citep{IVOAPARQUET} specifies that the VO metadata should be present in the file-level key-value metadata of the parquet file.
 We RECOMMEND that the VOParquet metadata be included in all parquet files, be they ancilliary metadata files (\texttt{\_common\_metadata}, \texttt{\_metadata}, \texttt{data\_thumbnail.parquet}) or data partitions.
 If VOParquet metadata exists in one data partition file, it MUST be present in all data partitions.
 
@@ -742,10 +742,7 @@ If the \texttt{\_common\_metadata} and \texttt{data\_thumbnail.parquet} files ar
 
 \subsection{Compatibility with other standards}
 
-HATS is designed to be compatible with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps) \citep{ivoa:MOC}. \par
-It builds upon the nested HEALPix tessellation scheme, which provides a hierarchical and uniform way to partition the celestial sphere. This structure is central to HATS: both the storage layout and the spatial indexing are defined in terms of HEALPix pixels.
-The full footprint of the catalog can alternatively be represented by a MOC, as it is a list of HEALPix pixels, at many different HEALPix orders. \par 
-
+As discussed above, HATS is designed to be closely integrated with existing VO spatial indexing frameworks, such as HEALPix and MOC (Multi-Order Coverage maps). It builds upon the nested HEALPix tessellation scheme, which provides a hierarchical and uniform way to partition the celestial sphere. \par
 The HATS format can be made to be compatible with the TAP query \citep{IVOA:TAP} by implementing a translation layer between the TAP query language. 
 We have explored some initial implementation of such functionality, but the implementation details will always depend on the language used to handle the Parquet files. \par
 
@@ -762,15 +759,37 @@ Bradner, S.  \harvardyearleft 1997\harvardyearright , `Key words for use in
   {RFCs} to indicate requirement levels', RFC 2119.
 \newblock \url{http://www.ietf.org/rfc/rfc2119.txt}.
 
-\harvarditem{Masci et al.}{2019}{ztf:Masci2019}
-Masci, F.~J., et al. \harvardyearleft 2019\harvardyearright,
-`The Zwicky Transient Facility: Data Processing, Products, and Archive',
-PASP, 131, 018003. \url{https://ui.adsabs.harvard.edu/abs/2019PASP..131a8003M}.
+\harvarditem{G{\'o}rski et al.}{2005}{gorski:healpix}
+G{\'o}rski, K.~M., Hivon, E., Banday, A.~J., Wandelt, B.~D., Hansen, F.~K., Reinecke, M., \& Bartelmann, M.  
+\harvardyearleft 2005\harvardyearright,  
+`HEALPix: A Framework for High-Resolution Discretization and Fast Analysis of Data Distributed on the Sphere',  
+*Astrophysical Journal*, **622**, 759–771.  
+\url{https://ui.adsabs.harvard.edu/abs/2005ApJ...622..759G}.
 
 \harvarditem{Bellm et al.}{2019}{ztf:Bellm2019}
 Bellm, E.~C., et al. \harvardyearleft 2019\harvardyearright,
 `The Zwicky Transient Facility: System Overview, Performance, and First Results',
 PASP, 131, 018002. \url{https://ui.adsabs.harvard.edu/abs/2019PASP..131a8002B}.
+
+\harvarditem{Masci et al.}{2019}{ztf:Masci2019}
+Masci, F.~J., et al. \harvardyearleft 2019\harvardyearright,
+`The Zwicky Transient Facility: Data Processing, Products, and Archive',
+PASP, 131, 018003. \url{https://ui.adsabs.harvard.edu/abs/2019PASP..131a8003M}.
+
+\harvarditem[Preite Martinez et al.]{Preite Martinez, Louys, Cecconi, Derrière, Ochsenbein, Erard, and Demleitner}{2024}{ucd1plus2024}
+Preite Martinez, A., Louys, M., Cecconi, B., Derrière, S., Ochsenbein, F., Erard, S., and Demleitner, M. (2024). \emph{UCD1+ Controlled Vocabulary – Updated List of Terms, Version 1.6}. IVOA Endorsed Note, 18 December 2024. IVOA Semantics Working Group. Available at: \url{https://www.ivoa.net/documents/UCD1+/index.html}.
+
+
+
+\harvarditem{Fernique et al.}{2017}{ivoa:HIPS}
+Fernique, P., Allen, M., Boch, T., Donaldson, T., Durand, D., Ebisawa, K., Michel, L., Salgado, J., \& Stoehr, F. (2017), *HiPS - Hierarchical Progressive Survey Version 1.0*, IVOA Recommendation, 19 May 2017. \url{http://www.ivoa.net/documents/HiPS/20170519/}
+
+
+\harvarditem[Taylor et al.]{Taylor, Pineau, Dubois-Felsmann, and Sipőcz}{2025}{IVOAPARQUET}
+Taylor, M., Pineau, F.-X., Dubois-Felsmann, G., and Sipőcz, B. \emph{Parquet in the VO}. IVOA Note, 16 January 2025. \url{https://www.ivoa.net/documents/Notes/VOParquet/20250116/index.html}
+
+
+
 
 \harvarditem{Fernique et al.}{2019}{ivoa:MOC}
 Fernique, P., Boch, T., Donaldson, T., Durand, D., O'Mullane, W., Reinecke, M., \& Taylor, M.  
@@ -779,27 +798,10 @@ Fernique, P., Boch, T., Donaldson, T., Durand, D., O'Mullane, W., Reinecke, M., 
 IVOA Recommendation 07 October 2019.  
 \url{https://ui.adsabs.harvard.edu/abs/2019ivoa.spec.1007F}.
 
-\harvarditem{G{\'o}rski et al.}{2005}{gorski:healpix}
-G{\'o}rski, K.~M., Hivon, E., Banday, A.~J., Wandelt, B.~D., Hansen, F.~K., Reinecke, M., \& Bartelmann, M.  
-\harvardyearleft 2005\harvardyearright,  
-`HEALPix: A Framework for High-Resolution Discretization and Fast Analysis of Data Distributed on the Sphere',  
-*Astrophysical Journal*, **622**, 759–771.  
-\url{https://ui.adsabs.harvard.edu/abs/2005ApJ...622..759G}.
-
-\harvarditem{Fernique et al.}{2017}{ivoa:HIPS}
-Fernique, P., Allen, M., Boch, T., Donaldson, T., Durand, D., Ebisawa, K., Michel, L., Salgado, J., \& Stoehr, F. (2017), *HiPS - Hierarchical Progressive Survey Version 1.0*, IVOA Recommendation, 19 May 2017. \url{http://www.ivoa.net/documents/HiPS/20170519/}
-
 \harvarditem{Dowler et al.}{2019}{IVOA:TAP}
 Dowler, P., Rixon, G., \& Tody, D. (2019),
 \emph{Table Access Protocol Version 1.1},
 IVOA Recommendation 2019-10-29, \url{https://www.ivoa.net/documents/TAP/20191029/REC-TAP-1.1-20191029.html}
-
-\harvarditem[Taylor et al.]{Taylor, Pineau, Dubois-Felsmann, and Sipőcz}{2025}{IVOAPARQUET}
-Taylor, M., Pineau, F.-X., Dubois-Felsmann, G., and Sipőcz, B. \emph{Parquet in the VO}. IVOA Note, 16 January 2025. \url{https://www.ivoa.net/documents/Notes/VOParquet/20250116/index.html}
-
-\harvarditem[Preite Martinez et al.]{Preite Martinez, Louys, Cecconi, Derrière, Ochsenbein, Erard, and Demleitner}{2024}{ucd1plus2024}
-Preite Martinez, A., Louys, M., Cecconi, B., Derrière, S., Ochsenbein, F., Erard, S., and Demleitner, M. (2024). \emph{UCD1+ Controlled Vocabulary – Updated List of Terms, Version 1.6}. IVOA Endorsed Note, 18 December 2024. IVOA Semantics Working Group. Available at: \url{https://www.ivoa.net/documents/UCD1+/index.html}.
-
 \end{thebibliography}
 \end{document}
 
