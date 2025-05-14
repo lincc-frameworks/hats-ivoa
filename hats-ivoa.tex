@@ -546,18 +546,22 @@ This file is OPTIONAL and RECOMMENDED for object catalogs.
 
 Many Parquet reading frameworks support and recommend additional dataset-level metadata files:
 \begin{itemize}
-    \item \texttt{\_common\_metadata} which contains the full schema of the dataset, and can be thought of as extensive header information. 
-    This file will know all of the columns and their types, as well as any top-level key-value metadata associated with the full Parquet dataset.
-    \item \texttt{\_metadata} contains per-partition information, chiefly the Parquet footer information of all constituent Parquet files which contain aggregate statistics.
+    \item \texttt{\_common\_metadata} which contains the full schema of the dataset. 
+    This file will know all of the columns and their types, as well as any file-level key-value metadata associated with the full Parquet dataset.
+    \item \texttt{\_metadata} contains per-partition information, chiefly the storage information and column metadata and statistics.
 \end{itemize}
 
 Both files are OPTIONAL and RECOMMENDED for all catalogs.
 
 To understand the importance of these files, it is helpful to understand the structure of partitioned Parquet files. 
 Figure~\ref{fig:partitionedParquet} shows a schematic of two partitioned Parquet files. 
-There is some top-level metadata that may describe the full dataset, as well as column-level key-value metadata.
+
 The data values are shown in gray, and typically will take up most of the space of the Parquet file. 
-Parquet files will also have footers which may contain aggregate statistics about each column (min value, max value, count of valid values).
+Data is stored and compressed on disk per "row group".
+File 1 in Figure~\ref{fig:partitionedParquet} contains less data, and it all fits into a single row group.
+File 2 in Figure~\ref{fig:partitionedParquet} contains more data, and is split on disk into two row groups. 
+All of the metadata is stored inside the file footer. There is some file-level metadata that may describe the full dataset, as well as column-level key-value metadata.
+Parquet files MAY also have aggregate statistics about values in each column (minimum value, maximum value, count of valid values).
 
 \begin{figure}
 \centering
@@ -566,12 +570,12 @@ Parquet files will also have footers which may contain aggregate statistics abou
 \label{fig:partitionedParquet}
 \end{figure}
 
-For very large datasets, it is helpful to have a single file that holds the common header information in all of the partitioned Parquet files (assuming that they have homogeneous structure).
+For very large datasets, it is helpful to have a single file that holds the common data schema information in all of the partitioned Parquet files (assuming that they have homogeneous structure).
 This \texttt{\_common\_metadata} file can be much smaller (and so faster to read) than a leaf Parquet file.
-The footers, however, will be different for every file, and some files may contain multiple footers if the data inside a single file is very large.
-These footers can be concatenated into a single \texttt{\_metadata} file, and can provide valuable insight into the distribution of the data. 
+The column statistics, however, will be different for every file, and some files may contain multiple statistics segments if the data inside a single file is very large and has been divided into multiple row groups.
+These statistics can be concatenated into a single \texttt{\_metadata} file, and can provide valuable insight into the distribution of the data. 
 A clever Parquet reader can use this information to filter queries to only those partitions where certain values are possible.
-See Figure~\ref{fig:parquetMetadata} for the layout of these Parquet metadata files.
+See Figure~\ref{fig:parquetMetadata} for the layout of these two Parquet metadata files.
 
 \begin{figure}
 \centering
