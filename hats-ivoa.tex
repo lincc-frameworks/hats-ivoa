@@ -646,12 +646,11 @@ Figure~\ref{fig:archdiag} shows the role this document plays within the IVOA arc
 
 HATS is inspired by the HiPS standard \footnote{\href{https://www.ivoa.net/documents/HiPS/20170519/index.html}{https://www.ivoa.net/documents/HiPS/20170519/index.html}}.
 HATS shares similar principles and structure, but serves a different purpose.
-This section briefly tackles both approach's similarities and discrepancies.
+This section briefly tackles the similarities and differences in the approaches, as motivated by the distinct use cases.
 
 Both HATS and HiPS are based on the hierarchical nature of the HEALPix NESTED indexing strategy.
 Both are designed to serve static files in a directory structure, possibly behind a minimalist web server.
-Property files are made of a simple list of key/value pairs, easy to parse and to interpret.
-Such files can for example be seen as Java properties, or simple TOML, files.
+Property files are made of a simple list of key/value pairs. They are easy to parse and to interpret, e.g. as Java properties files.
 HiPS and HATS both rely on well supported -- and even standardized -- HEALPix files: MOC for HiPS, Skymaps for HATS.
 
 But we can note two main differences.
@@ -664,9 +663,9 @@ On the contrary, HATS is an adaptative grid with information distributed in the 
 Each leaf is quite large (typically a few hundreds of megabytes). 
 The main goal is the possibility to perform operations (including row-filtering) on sub-columns, on the whole dataset (often meaning the whole sky).
    \item Secondly, on one hand, HiPS does not rely on any given external implementation.
-The implementer of a client supporting the standard has to write its own, moderately complex, code.
+The implementer of a client supporting the HiPS standard has to write its own, moderately complex, code.
 The moderate size of a HEALPix tile is guaranteed by construction in the standard.
-On the other hand, HATS relies on an industry standard and thus on the external implementation of a complex code (the Parquet file format and distant interrogation code). 
+On the other hand, HATS utilizes an industry standard and thus benefits from the external implementation of complex code, as well as ongoing community maintenance of the software.
 The possible reduction of the amount of data retrieved per tile depends on both the request and the implementations (assuming static files).
 \end{enumerate}
 
