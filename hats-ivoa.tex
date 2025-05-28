@@ -94,8 +94,8 @@ infrastructure that enable VO applications.
 
 \section{Introduction}
 The rapid expansion of astronomical data from large survey facilities like Vera C. Rubin Observatory, Euclid, and Roman Space Telescope necessitates innovative solutions for spatial indexing and efficient data retrieval. 
-These surveys generate vast amounts of high-resolution imaging and time-domain data, requiring efficient methods for organizing, querying, and cross-matching data across multiple archives. 
-Traditional approaches to spatial indexing, such as hierarchical pixelization (e.g., HEALPix  \citep{gorski:healpix}) or static tiling schemes, often exhibit inefficiencies when handling uneven sky densities.
+These surveys generate vast amounts of high-resolution imaging and time-domain data, requiring efficient methods for organizing, querying, and cross-matching data across multiple archives. The challenges of storing and operating on imaging, spectral, and time-series data from multiple surveys are increasingly recognized \citep{Nadvornik2021}. 
+Traditional approaches to spatial indexing, such as hierarchical pixelization (e.g., HEALPix  \cite{gorski:healpix}) or static tiling schemes, often exhibit inefficiencies when handling uneven sky densities. 
 
 The Hierarchical Adaptive Tiling Scheme (HATS) is a novel approach designed to optimize spatial data partitioning while maintaining flexibility in accommodating varying data densities. 
 Unlike fixed spatial partitioning methods, HATS adaptively adjusts tile sizes based on local data characteristics, ensuring an optimal balance between resolution, query efficiency, and storage management. 
@@ -765,6 +765,12 @@ G{\'o}rski, K.~M., Hivon, E., Banday, A.~J., Wandelt, B.~D., Hansen, F.~K., Rein
 `HEALPix: A Framework for High-Resolution Discretization and Fast Analysis of Data Distributed on the Sphere',  
 *Astrophysical Journal*, **622**, 759–771.  
 \url{https://ui.adsabs.harvard.edu/abs/2005ApJ...622..759G}.
+
+\harvarditem[Nádvorník et al.]{Nádvorník, Škoda, and Tvrdík}{2021}{Nadvornik2021}
+Nádvorník, J., Škoda, P. \& Tvrdík, P. (2021).
+HiSS-Cube: A scalable framework for Hierarchical Semi-Sparse Cubes preserving uncertainties.
+\textit{Astronomy and Computing}, \textbf{36}, 100463.
+\href{https://doi.org/10.1016/j.ascom.2021.100463}{doi:10.1016/j.ascom.2021.100463}.
 
 \harvarditem{Bellm et al.}{2019}{ztf:Bellm2019}
 Bellm, E.~C., et al. \harvardyearleft 2019\harvardyearright,
