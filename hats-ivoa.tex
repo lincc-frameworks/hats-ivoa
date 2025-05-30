@@ -132,9 +132,9 @@ The  \texttt{catalog} organization structure is shown in Listing~\ref{fig:exampl
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example catalog directory contents, label=fig:exampleCatalogStructure]
 catalog/
-|-- [REQUIRED] properties
+|-- [REQUIRED] hats.properties
 |-- [RECOMMENDED] partition_info.csv
-|-- [OPTIONAL] point_map.fits
+|-- [OPTIONAL] skymap.fits
 |-- [OPTIONAL] data_thumbnail.parquet
 +-- dataset/
     |-- [RECOMMENDED] _metadata
@@ -294,7 +294,7 @@ Instead, we have a flat storage of the parquet files, as shown in Listing~\ref{f
 \begin{minipage}{\linewidth}
   \begin{lstlisting}[caption=Example index table directory contents, label=fig:exampleIndexStructure]
   id_index/
-  |-- properties
+  |-- hats.properties
   +-- dataset/
       |-- _metadata
       |-- _common_metadata
@@ -318,16 +318,16 @@ The catalog collection directory MUST contain a \texttt{collection.properties} f
 gaia_dr3/
 |-- collection.properties
 |-- catalog/
-|   |-- properties
+|   |-- hats.properties
 |   +-- . . .
 |-- [OPTIONAL] margin_5arcs/
-|   |-- properties
+|   |-- hats.properties
 |   +-- . . .
 |-- [OPTIONAL] margin_10arcs/
-|   |-- properties
+|   |-- hats.properties
 |   +-- . . .
 +-- [OPTIONAL] index_designation/
-    |-- properties
+    |-- hats.properties
     +-- . . .
 \end{lstlisting}
 \end{minipage}
@@ -350,32 +350,36 @@ If there are many more or many fewer association links than there are objects in
 \subsection{Metadata and Auxiliary Files} \label{sec:meta}
 HATS implementations utilize auxiliary files and metadata files to store relevant information about the  structure, including:
 \begin{itemize}
-    \item \textbf{[REQUIRED] properties}, at  \texttt{catalog} level    
+    \item \textbf{[REQUIRED] hats.properties}, at  \texttt{catalog} level    
     \item \textbf{[RECOMMENDED] partition\_info.csv}, at  \texttt{catalog} level
     \item \textbf{[RECOMMENDED] partition\_join\_info.csv}, at  \texttt{catalog} level
-    \item \textbf{[OPTIONAL] point\_map.fits}, at  \texttt{catalog} level
+    \item \textbf{[OPTIONAL] skymap.fits}, at  \texttt{catalog} level
     \item \textbf{[OPTIONAL] data\_thumbnail.parquet}, at  \texttt{catalog} level
     \item \textbf{[RECOMMENDED] \_metadata}, at  \texttt{catalog/dataset} level
     \item \textbf{[RECOMMENDED] \_common\_metadata}, at  \texttt{catalog/dataset} level
-    \item \textbf{[REQUIRED] collection.properties}, at  \texttt{catalog} collection level
+    \item \textbf{[REQUIRED by condition] collection.properties}, at  \texttt{catalog} collection level, if creating a collection for the dataset.
 \end{itemize}
-    
-Note that collection.properties is only required if creating a \texttt{catalog} collection for your dataset. \par 
+
+Note that additional top-level metadata files
+can be included, either in the \texttt{catalog} root directory level, or at the \texttt{catalog/dataset} directory
+level. If additional metadata is necessary to support other open parquet data standards, those files are not 
+forbidden in the HATS directory structure.\par 
+
 We will now go over these files and explain their function, format and their contents. 
     
-\subsubsection{properties} 
+\subsubsection{hats.properties} 
 
-A text file named \texttt{properties} is REQUIRED in the root level of the catalog directory.
+A text file named \texttt{hats.properties} is REQUIRED in the root level of the catalog directory.
 It marks the directory as containing a HATS catalog, and so MUST be located in the root directory of the catalog.
-It MUST be encoded in UTF-8, with one line per property, following the syntax \texttt{keyword = value}.
+It MUST be encoded in UTF-8, with one line per property, following the syntax \texttt{keyword~=~value}.
 The ordering of the keywords is not important. The keywords MAY include many of those listed in Table~\ref{tab:properties}.
 
 The text file may contain comment lines, beginning with the \texttt{'\#'} character.
 
-An example \texttt{properties} file is shown in Listing~\ref{fig:examplePropertiesFile}.
+An example \texttt{hats.properties} file is shown in Listing~\ref{fig:examplePropertiesFile}.
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[caption=Example \texttt{properties} file contents, label=fig:examplePropertiesFile]
+\begin{lstlisting}[caption=Example \texttt{hats.properties} file contents, label=fig:examplePropertiesFile]
 #HATS catalog
 obs_collection=euclid_q1_merFinalCatalog
 dataproduct_type=object
@@ -442,6 +446,8 @@ hats\_primary\_table\_url &For supplemental tables, there will be a primary tabl
 hats\_progenitor\_url &URL to an associated progenitor HATS catalog. Format: URL \\
 hats\_release\_date &Last HATS update date - Format: ISO 8601 => YYYY-mm-ddTHH:MMZ \\
 hats\_service\_url &HATS access url. Format: URL \\
+hats\_skymap\_alt\_orders &HEALPix orders of alternative skymap files. Format: space-delimited integers \\
+hats\_skymap\_order &HEALPix order of the default \texttt{skymap.fits} file. Format: positive integer \\
 hats\_status &HATS status. Format: list of space-delimited words ("private" or "public"), ("main", "mirror", or "partial"), ("clonable", "unclonable" or "clonableOnce"). Default : public main clonableOnce \\
 hats\_version &Number of HATS version. Format: 0.1 (corresponds to version of this note) \\
 moc\_sky\_fraction &Fraction of the sky covered by the MOC associated to the HATS. Format: real between 0 and 1 \\
@@ -538,14 +544,50 @@ Norder,Npix,join_Norder,join_Npix
 \end{lstlisting}
 \end{minipage}
 
-\subsubsection{point\_map.fits} 
+\subsubsection{skymap.fits} 
 
-A FITS file containing the HEALPix skymap of the catalog.
+A FITS file containing the HEALPix skymap\footnote{\url{https://healpix.sourceforge.io/data/examples/healpix_fits_specs.pdf}} of the catalog.
 This is a two-dimensional histogram of points in each HEALPix tile at some reasonably high order.
 This will be at the highest order calculated during the catalog ingestion process (likely 9 or 10). 
 This data is useful when inspecting catalogs and understanding the distribution of data. 
 
 This file is OPTIONAL and RECOMMENDED for object catalogs.
+
+The HEALPix order of this skymap should be at least as fine as the highest order pixel of data partitions (e.g. if the highest HEALPix order for a data partition is 7, the skymap should have order 7 or higher).
+The HEALPix order of the skymap should additionally be written to the \texttt{hats.properties} file
+as the \texttt{hats\_skymap\_order} property.
+It should use \texttt{IMPLICIT} and \texttt{NESTED} for the HEALpix indexing.
+Providers MAY wish to encode additional data in the \texttt{skymap.fits} file, and may do
+so in additional fields. If this is done, the number of points in the pixel should be in a 
+column named \texttt{COUNT}.
+
+In addition to a high order HEALPix skymap, the root-level MAY contain additional down-sampled skymap files.
+This can be useful for user interfaces that wish to show overall survey coverage quickly.
+
+Listing~\ref{fig:exampleSkymapDir} shows an example directory, containing a default \texttt{skymap.fits} file, 
+which contains a HEALPix skymap at order 6. In addition, there are down-sampled skymaps in files \texttt{skymap.2.fits} and \texttt{skymap.4.fits}. 
+These HEALPix orders MUST match the values in the \texttt{hats\_skymap\_order} and \texttt{hats\_skymap\_alt\_orders} properties,
+as shown in the example \texttt{hats.properties} contents in Listing~\ref{fig:exampleSkymapProperties}.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example directory contents with multiple skymap files, label=fig:exampleSkymapDir]   
+catalog/
+|-- partition_info.csv
+|-- hats.properties
+|-- skymap.2.fits
+|-- skymap.4.fits
++-- skymap.fits
+\end{lstlisting}
+\end{minipage}
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Example \texttt{hats.properties} file contents with skymap orders, label=fig:exampleSkymapProperties]    
+#HATS catalog
+. . .
+hats_skymap_order=6
+hats_skymap_alt_orders=2 4
+\end{lstlisting}
+\end{minipage}
 
 \subsubsection{data\_thumbnail.parquet} 
 This is a small dataset aimed to help users to understand and use the data. 
@@ -601,6 +643,11 @@ See Figure~\ref{fig:parquetMetadata} for the layout of these two Parquet metadat
 \label{fig:parquetMetadata}
 \end{figure}
 
+Note here that these files are used by \textit{some} parquet readers. Other utilities may write or read 
+additional metadata to enable their use cases. The HATS structure allows additional top-level metadata files,
+either in the \texttt{catalog} root directory level, or at the \texttt{catalog/dataset} directory
+level where necessary to support other open parquet data standards.
+
 \subsubsection{collection.properties}\label{sec:collectionProperties}
 A text file named \texttt{collection.properties} is REQUIRED for a catalog collection.
 It marks the directory as containing a catalog collection, and so MUST be located in the 
@@ -610,7 +657,7 @@ The ordering of the keywords is not important.
 The keywords MAY include many of those listed in Table~\ref{tab:properties}, with collection-specific fields shown in Table~\ref{tab:propertyRequirements}.
 
 The text file may contain comment lines, beginning with the \texttt{'\#'} character.
-An example \texttt{properties} file is shown in Listing~\ref{fig:exampleCollectionPropertiesFile}.
+An example \texttt{collection.properties} file is shown in Listing~\ref{fig:exampleCollectionPropertiesFile}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption=Example \texttt{collection.properties} file contents, label=fig:exampleCollectionPropertiesFile]
@@ -697,7 +744,7 @@ At the root level, both:
  \item recommend to have coverage information
  \begin{itemize}
   \item HiPS: \texttt{MOC.fits}
-  \item HATS: \texttt{partition\_info.csv} (recommended) and \texttt{point\_maps.fits} (density map, optional)
+  \item HATS: \texttt{partition\_info.csv} (recommended) and \texttt{skymap.fits} (density map, optional)
  \end{itemize}
  \item allow for an optional preview:
  \begin{itemize}
